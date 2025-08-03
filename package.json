@@ -1,0 +1,77 @@
+{
+  "name": "soccer-management-system",
+  "version": "2.0.0",
+  "description": "🏆 Sistema Gestionale Completo per Società di Calcio Femminile - Enterprise Edition con AI Assistant integrato",
+  "keywords": [
+    "soccer",
+    "football",
+    "management", 
+    "react",
+    "tailwind",
+    "enterprise",
+    "ai-assistant",
+    "analytics",
+    "sports-management"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext js,jsx --fix",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "deploy": "npm run build && npm run preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.263.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.7",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "vite": "^5.3.1",
+    "vitest": "^1.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucamambelli/soccer-management-system.git"
+  },
+  "author": {
+    "name": "Luca Mambelli",
+    "email": "luca.mambelli@example.com",
+    "url": "https://github.com/lucamambelli"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lucamambelli/soccer-management-system/issues"
+  },
+  "homepage": "https://github.com/lucamambelli/soccer-management-system#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+# Escludi file di archivio dal repository
+archive/
+
+# Ma mantieni i file importanti
+!archive/.gitkeep

@@ -1,0 +1,178 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Custom CSS per Soccer Management System */
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+    min-height: 100vh;
+  }
+  
+  * {
+    @apply border-border;
+  }
+}
+
+@layer components {
+  /* Componenti personalizzati */
+  .btn-primary {
+    @apply bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-lg p-6 border border-gray-200;
+  }
+  
+  .status-badge {
+    @apply px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-valid {
+    @apply bg-green-500 text-white;
+  }
+  
+  .status-warning {
+    @apply bg-yellow-400 text-black;
+  }
+  
+  .status-critical {
+    @apply bg-red-400 text-white;
+  }
+  
+  .status-expired {
+    @apply bg-red-500 text-white;
+  }
+  
+  .status-paid {
+    @apply bg-green-500 text-white;
+  }
+  
+  .status-pending {
+    @apply bg-orange-500 text-white;
+  }
+  
+  /* Animazioni personalizzate */
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  /* Scrollbar personalizzata */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+  
+  /* Layout responsive */
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Table responsive */
+  .table-responsive {
+    @apply min-w-full divide-y divide-gray-200;
+  }
+  
+  .table-header {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+  }
+  
+  .table-cell {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+  }
+  
+  /* Modal styles */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+  }
+  
+  .modal-content {
+    @apply bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto;
+  }
+  
+  /* Loading spinner */
+  .spinner {
+    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500;
+  }
+  
+  /* Focus styles for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+  
+  /* Navigation active state */
+  .nav-active {
+    @apply bg-blue-500 text-white;
+  }
+  
+  .nav-inactive {
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700;
+  }
+}
+
+@layer utilities {
+  /* Utilità personalizzate */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-blue-600 to-blue-800;
+  }
+  
+  .bg-gradient-success {
+    @apply bg-gradient-to-r from-green-500 to-green-700;
+  }
+  
+  .bg-gradient-warning {
+    @apply bg-gradient-to-r from-yellow-400 to-orange-500;
+  }
+  
+  .bg-gradient-danger {
+    @apply bg-gradient-to-r from-red-500 to-red-700;
+  }
+  
+  /* Shadows personalizzate */
+  .shadow-card {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .shadow-modal {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+  
+  /* Print styles */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    
+    .print-break {
+      break-after: page;
+    }
+  }
+}

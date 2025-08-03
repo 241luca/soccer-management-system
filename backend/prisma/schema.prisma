@@ -1,0 +1,613 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  COACH
+  STAFF
+  PARENT
+  ATHLETE
+}
+
+enum AthleteStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  TRANSFERRED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum DocumentStatus {
+  VALID
+  EXPIRING
+  EXPIRED
+  MISSING
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+// Models
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  logoUrl   String?
+  settings  Json     @default("{}")
+  // Multi-tenant fields
+  subdomain    String?  @unique
+  plan         String   @default("basic")
+  maxUsers     Int      @default(10)
+  maxAthletes  Int      @default(100)
+  maxTeams     Int      @default(10)
+  isActive     Boolean  @default(true)
+  isTrial      Boolean  @default(true)
+  trialEndsAt  DateTime?
+  billingEmail String?
+  customDomain String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users        User[]
+  teams        Team[]
+  athletes     Athlete[]
+  matches      Match[]
+  buses        Bus[]
+  zones        TransportZone[]
+  venues       Venue[]
+  competitions Competition[]
+  positions    Position[]
+  documentTypes DocumentType[]
+  paymentTypes PaymentType[]
+  notifications Notification[]
+  auditLogs    AuditLog[]
+  roles        Role[]
+  invitations  OrganizationInvitation[]
+  userOrganizations UserOrganization[]
+}
+
+model User {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  passwordHash     String
+  role             UserRole  @default(STAFF) // Default role, actual permissions via UserOrganization
+  firstName        String
+  lastName         String
+  phone            String?
+  organizationId   String?   // Made optional for multi-org users
+  isActive         Boolean   @default(true)
+  lastLogin        DateTime?
+  failedLoginAttempts Int    @default(0)
+  lockedUntil      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  organization     Organization? @relation(fields: [organizationId], references: [id])
+  uploadedDocuments Document[]
+  createdPayments  Payment[]    @relation("PaymentCreator")
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+  userOrganizations UserOrganization[]
+  sentInvitations  OrganizationInvitation[]
+  
+  @@index([organizationId])
+  @@index([email])
+}
+
+model Team {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  category       String
+  season         String
+  minAge         Int
+  maxAge         Int
+  budget         Decimal  @default(0) @db.Decimal(10, 2)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  athletes       Athlete[]
+  homeMatches    Match[]      @relation("HomeTeam")
+  awayMatches    Match[]      @relation("AwayTeam")
+
+  @@unique([organizationId, name, season])
+  @@index([organizationId])
+}
+
+model Athlete {
+  id             String        @id @default(uuid())
+  organizationId String
+  teamId         String?
+  firstName      String
+  lastName       String
+  birthDate      DateTime      @db.Date
+  fiscalCode     String?       @unique
+  email          String?
+  phone          String?
+  address        String?
+  city           String?
+  province       String?       @db.VarChar(2)
+  postalCode     String?       @db.VarChar(5)
+  latitude       Decimal?      @db.Decimal(10, 8)
+  longitude      Decimal?      @db.Decimal(11, 8)
+  jerseyNumber   Int?
+  positionId     Int?
+  status         AthleteStatus @default(ACTIVE)
+  usesTransport  Boolean       @default(false)
+  needsPromotion Boolean       @default(false)
+  notes          String?       @db.Text
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  team           Team?            @relation(fields: [teamId], references: [id])
+  position       Position?        @relation(fields: [positionId], references: [id])
+  documents      Document[]
+  payments       Payment[]
+  transport      AthleteTransport?
+  matchRosters   MatchRoster[]
+  matchStats     MatchStat[]
+
+  @@unique([teamId, jerseyNumber])
+  @@index([organizationId])
+  @@index([teamId])
+  @@index([lastName, firstName])
+}
+
+model Position {
+  id             Int      @id @default(autoincrement())
+  organizationId String
+  name           String
+  description    String?
+  sortOrder      Int      @default(0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  athletes       Athlete[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Document {
+  id             String         @id @default(uuid())
+  athleteId      String
+  documentTypeId Int
+  fileUrl        String?
+  fileName       String?
+  fileSize       Int?
+  mimeType       String?
+  issueDate      DateTime       @db.Date
+  expiryDate     DateTime       @db.Date
+  status         DocumentStatus @default(VALID)
+  notes          String?
+  uploadedById   String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  athlete        Athlete      @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  documentType   DocumentType @relation(fields: [documentTypeId], references: [id])
+  uploadedBy     User         @relation(fields: [uploadedById], references: [id])
+
+  @@index([athleteId])
+  @@index([expiryDate])
+  @@index([status])
+}
+
+model DocumentType {
+  id             Int      @id @default(autoincrement())
+  organizationId String
+  name           String
+  category       String
+  isRequired     Boolean  @default(false)
+  validityDays   Int      @default(365)
+  reminderDays   Int[]    @default([30, 15, 7])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  documents      Document[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  organizationId String
+  athleteId      String
+  paymentTypeId  Int
+  amount         Decimal       @db.Decimal(10, 2)
+  dueDate        DateTime      @db.Date
+  paidDate       DateTime?     @db.Date
+  status         PaymentStatus @default(PENDING)
+  paymentMethod  String?
+  transactionId  String?
+  notes          String?
+  createdById    String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  athlete        Athlete      @relation(fields: [athleteId], references: [id])
+  paymentType    PaymentType  @relation(fields: [paymentTypeId], references: [id])
+  createdBy      User         @relation("PaymentCreator", fields: [createdById], references: [id])
+  invoice        Invoice?
+
+  @@index([athleteId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model PaymentType {
+  id             Int      @id @default(autoincrement())
+  organizationId String
+  name           String
+  amount         Decimal  @db.Decimal(10, 2)
+  frequency      String   // annual, monthly, quarterly, one-time
+  category       String   // membership, transport, equipment, events, other
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  payments       Payment[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  paymentId     String   @unique
+  invoiceNumber String   @unique
+  fileUrl       String?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  payment       Payment  @relation(fields: [paymentId], references: [id])
+}
+
+model Match {
+  id             String      @id @default(uuid())
+  organizationId String
+  competitionId  Int?
+  homeTeamId     String
+  awayTeamId     String
+  matchDate      DateTime    @db.Date
+  matchTime      DateTime    @db.Time
+  venueId        Int?
+  status         MatchStatus @default(SCHEDULED)
+  homeScore      Int?
+  awayScore      Int?
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  competition    Competition?  @relation(fields: [competitionId], references: [id])
+  homeTeam       Team          @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam       Team          @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  venue          Venue?        @relation(fields: [venueId], references: [id])
+  rosters        MatchRoster[]
+  stats          MatchStat[]
+
+  @@index([matchDate])
+  @@index([homeTeamId, awayTeamId])
+}
+
+model MatchRoster {
+  id         String   @id @default(uuid())
+  matchId    String
+  athleteId  String
+  status     String   @default("selected") // selected, injured, absent
+  isStarter  Boolean  @default(false)
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  athlete    Athlete  @relation(fields: [athleteId], references: [id])
+
+  @@unique([matchId, athleteId])
+}
+
+model MatchStat {
+  id            String   @id @default(uuid())
+  matchId       String
+  athleteId     String
+  minutesPlayed Int      @default(0)
+  goals         Int      @default(0)
+  assists       Int      @default(0)
+  yellowCards   Int      @default(0)
+  redCards      Int      @default(0)
+  saves         Int      @default(0) // for goalkeepers
+  createdAt     DateTime @default(now())
+
+  // Relations
+  match         Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  athlete       Athlete  @relation(fields: [athleteId], references: [id])
+
+  @@unique([matchId, athleteId])
+}
+
+model Competition {
+  id             Int      @id @default(autoincrement())
+  organizationId String
+  name           String
+  category       String   // giovanili, seniores, mista
+  season         String
+  startDate      DateTime? @db.Date
+  endDate        DateTime? @db.Date
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  matches        Match[]
+
+  @@unique([organizationId, name, season])
+  @@index([organizationId])
+}
+
+model Venue {
+  id             Int      @id @default(autoincrement())
+  organizationId String
+  name           String
+  address        String?
+  city           String?
+  capacity       Int?
+  surfaceType    String?  // erba naturale, erba sintetica, terra, indoor
+  facilities     String?
+  latitude       Decimal? @db.Decimal(10, 8)
+  longitude      Decimal? @db.Decimal(11, 8)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  matches        Match[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model TransportZone {
+  id             String   @id
+  organizationId String
+  name           String
+  distanceRange  String
+  monthlyFee     Decimal  @db.Decimal(10, 2)
+  color          String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization       @relation(fields: [organizationId], references: [id])
+  transports     AthleteTransport[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId])
+}
+
+model Bus {
+  id             String      @id @default(uuid())
+  organizationId String
+  name           String
+  plateNumber    String?     @unique
+  capacity       Int
+  driverName     String?
+  driverPhone    String?
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  routes         BusRoute[]
+
+  @@index([organizationId])
+}
+
+model BusRoute {
+  id             String      @id @default(uuid())
+  busId          String
+  name           String
+  zonesCovered   String[]
+  departureTime  DateTime?   @db.Time
+  returnTime     DateTime?   @db.Time
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  bus            Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
+  transports     AthleteTransport[]
+}
+
+model AthleteTransport {
+  id             String      @id @default(uuid())
+  athleteId      String      @unique
+  busRouteId     String?
+  zoneId         String
+  pickupAddress  String?
+  pickupTime     DateTime?   @db.Time
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  athlete        Athlete     @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  busRoute       BusRoute?   @relation(fields: [busRouteId], references: [id])
+  zone           TransportZone @relation(fields: [zoneId], references: [id])
+}
+
+model Notification {
+  id                 String    @id @default(uuid())
+  organizationId     String
+  userId             String?
+  type               String
+  severity           String    @default("info") // info, warning, error, success
+  title              String
+  message            String    @db.Text
+  isRead             Boolean   @default(false)
+  isPersistent       Boolean   @default(true)
+  relatedEntityType  String?
+  relatedEntityId    String?
+  actions            Json      @default("[]")
+  expiresAt          DateTime?
+  createdAt          DateTime  @default(now())
+
+  // Relations
+  organization       Organization @relation(fields: [organizationId], references: [id])
+  user               User?        @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  action         String
+  entityType     String
+  entityId       String
+  oldValues      Json?
+  newValues      Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Multi-tenant models
+model Plan {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  price       Decimal  @db.Decimal(10, 2)
+  maxUsers    Int
+  maxAthletes Int
+  maxTeams    Int
+  features    Json     // {transport: true, documents: true, etc.}
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Role {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  permissions    Json     // Array of permission strings
+  isSystem       Boolean  @default(false) // Cannot be deleted
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userOrganizations UserOrganization[]
+  invitations    OrganizationInvitation[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model UserOrganization {
+  id             String   @id @default(uuid())
+  userId         String
+  organizationId String
+  roleId         String
+  isDefault      Boolean  @default(false)
+  joinedAt       DateTime @default(now())
+
+  // Relations
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           Role         @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model SuperAdmin {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  isActive         Boolean   @default(true)
+  lastLogin        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([email])
+}
+
+model OrganizationInvitation {
+  id             String    @id @default(uuid())
+  organizationId String
+  email          String
+  roleId         String
+  token          String    @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  invitedById    String
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           Role         @relation(fields: [roleId], references: [id])
+  invitedBy      User         @relation(fields: [invitedById], references: [id])
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([token])
+}
