@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import StatusBadge from '../common/StatusBadge';
 
-const SettingsView = ({ data, stats, onSave }) => {
+const SettingsView = ({ data, stats, onSave, setCurrentView }) => {
   const [activeTab, setActiveTab] = useState('society');
   const [settings, setSettings] = useState({
     // Dati Società
@@ -284,6 +284,23 @@ const SettingsView = ({ data, stats, onSave }) => {
           {/* Tab Società */}
           {activeTab === 'society' && (
             <div className="space-y-6">
+              {/* Avviso per l'anagrafica completa */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="font-medium text-blue-900">Anagrafica Completa Società</p>
+                    <p className="text-sm text-blue-700">Gestisci tutti i dettagli della società inclusi logo, colori, contatti e dati legali</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCurrentView('organization-details')}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Apri Anagrafica
+                </button>
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Logo e Branding */}
                 <div className="lg:col-span-1">

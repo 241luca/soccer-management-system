@@ -17,7 +17,8 @@ import {
   UserCircle,
   Shield,
   Menu,
-  X
+  X,
+  Building2
 } from 'lucide-react';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import OrganizationSwitcher from '../organizations/OrganizationSwitcher';
@@ -119,11 +120,25 @@ const Navigation = ({
               
               {/* Logo */}
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">⚽</span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden">
+                  {organization?.logoUrl ? (
+                    <img 
+                      src={organization.logoUrl} 
+                      alt={organization.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-blue-500 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">⚽</span>
+                    </div>
+                  )}
                 </div>
-                <span className="text-xl font-bold text-gray-800 hidden sm:block">Soccer Manager</span>
-                <span className="text-xl font-bold text-gray-800 sm:hidden">SM</span>
+                <span className="text-xl font-bold text-gray-800 hidden sm:block">
+                  {organization?.name || 'Soccer Manager'}
+                </span>
+                <span className="text-xl font-bold text-gray-800 sm:hidden">
+                  {organization?.code || 'SM'}
+                </span>
               </div>
             </div>
 
@@ -301,10 +316,20 @@ const Navigation = ({
             <div className="p-4 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">⚽</span>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden">
+                    {organization?.logoUrl ? (
+                      <img 
+                        src={organization.logoUrl} 
+                        alt={organization.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-blue-500 flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">⚽</span>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-lg font-bold text-gray-800">Soccer Manager</span>
+                  <span className="text-lg font-bold text-gray-800">{organization?.name || 'Soccer Manager'}</span>
                 </div>
                 <button
                   onClick={() => setShowMobileMenu(false)}

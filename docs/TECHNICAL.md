@@ -249,6 +249,22 @@ enum PaymentStatus {
 4. **Organization Context**
 5. **Role-based Authorization**
 
+## 🆕 Modifiche Recenti (4 Agosto 2025)
+
+### Anagrafica Completa Società
+- ✅ **Nuovi campi nel database** per gestione completa anagrafica
+  - Dati societari: nome completo, indirizzo, contatti
+  - Dati fiscali: CF, P.IVA, IBAN
+  - Contatti dirigenza: presidente e segretario
+  - Social media e colori societari
+- ✅ **Componente OrganizationDetails** con 5 tab per gestione completa
+- ✅ **Logo società nella navbar** al posto del pallone generico
+- ✅ **Nome società dinamico** nella navigazione
+- ✅ **Logo nel menu cambio società** (OrganizationSwitcher)
+- ✅ **API endpoints** per lettura/scrittura anagrafica
+- ✅ **Validazioni frontend** per email, colori, CAP, etc.
+- 🔄 **Upload logo** da implementare con multer
+
 ## 🆕 Modifiche Recenti (Agosto 2025)
 
 ### 1. Rimozione Completa Dati Demo

@@ -23,6 +23,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import ConfigurationManager from './components/admin/ConfigurationManager';
 import OrganizationList from './components/organizations/OrganizationList';
 import OrganizationForm from './components/organizations/OrganizationForm';
+import OrganizationDetails from './components/organizations/OrganizationDetails';
 
 const SoccerManagementApp = () => {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -163,6 +164,14 @@ const SoccerManagementApp = () => {
             selectedTeam={selectedTeam}
             setSelectedTeam={setSelectedTeam}
             toast={toast}
+            setCurrentView={setCurrentView}
+          />
+        );
+      case 'organization-details':
+        return (
+          <OrganizationDetails 
+            organizationId={organization?.id}
+            canEdit={user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'}
           />
         );
       case 'notifications':

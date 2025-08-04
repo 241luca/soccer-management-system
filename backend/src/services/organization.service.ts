@@ -878,6 +878,130 @@ class OrganizationService {
 
     logger.info(`Ownership transferred from ${currentOwnerId} to ${newOwnerId} for organization ${organizationId}`);
   }
+
+  // Get organization details (anagrafica completa)
+  async getOrganizationDetails(organizationId: string) {
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        logoUrl: true,
+        fullName: true,
+        address: true,
+        city: true,
+        province: true,
+        postalCode: true,
+        country: true,
+        phone: true,
+        email: true,
+        website: true,
+        fiscalCode: true,
+        vatNumber: true,
+        foundedYear: true,
+        federationNumber: true,
+        iban: true,
+        bankName: true,
+        primaryColor: true,
+        secondaryColor: true,
+        description: true,
+        presidentName: true,
+        presidentEmail: true,
+        presidentPhone: true,
+        secretaryName: true,
+        secretaryEmail: true,
+        secretaryPhone: true,
+        socialFacebook: true,
+        socialInstagram: true,
+        socialTwitter: true,
+        socialYoutube: true,
+        _count: {
+          select: {
+            users: true,
+            athletes: true,
+            teams: true
+          }
+        }
+      }
+    });
+
+    if (!organization) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    return organization;
+  }
+
+  // Update organization details (anagrafica completa)
+  async updateOrganizationDetails(organizationId: string, data: any) {
+    // Validate colors if provided
+    if (data.primaryColor && !this.isValidHexColor(data.primaryColor)) {
+      throw new ValidationError('Invalid primary color format. Use hex color (e.g. #3B82F6)');
+    }
+    if (data.secondaryColor && !this.isValidHexColor(data.secondaryColor)) {
+      throw new ValidationError('Invalid secondary color format. Use hex color (e.g. #1E40AF)');
+    }
+
+    // Validate email formats
+    if (data.email && !this.isValidEmail(data.email)) {
+      throw new ValidationError('Invalid organization email format');
+    }
+    if (data.presidentEmail && !this.isValidEmail(data.presidentEmail)) {
+      throw new ValidationError('Invalid president email format');
+    }
+    if (data.secretaryEmail && !this.isValidEmail(data.secretaryEmail)) {
+      throw new ValidationError('Invalid secretary email format');
+    }
+
+    // Update organization
+    const updated = await prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        ...(data.fullName !== undefined && { fullName: data.fullName }),
+        ...(data.address !== undefined && { address: data.address }),
+        ...(data.city !== undefined && { city: data.city }),
+        ...(data.province !== undefined && { province: data.province }),
+        ...(data.postalCode !== undefined && { postalCode: data.postalCode }),
+        ...(data.country !== undefined && { country: data.country }),
+        ...(data.phone !== undefined && { phone: data.phone }),
+        ...(data.email !== undefined && { email: data.email }),
+        ...(data.website !== undefined && { website: data.website }),
+        ...(data.fiscalCode !== undefined && { fiscalCode: data.fiscalCode }),
+        ...(data.vatNumber !== undefined && { vatNumber: data.vatNumber }),
+        ...(data.foundedYear !== undefined && { foundedYear: data.foundedYear }),
+        ...(data.federationNumber !== undefined && { federationNumber: data.federationNumber }),
+        ...(data.iban !== undefined && { iban: data.iban }),
+        ...(data.bankName !== undefined && { bankName: data.bankName }),
+        ...(data.primaryColor !== undefined && { primaryColor: data.primaryColor }),
+        ...(data.secondaryColor !== undefined && { secondaryColor: data.secondaryColor }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.presidentName !== undefined && { presidentName: data.presidentName }),
+        ...(data.presidentEmail !== undefined && { presidentEmail: data.presidentEmail }),
+        ...(data.presidentPhone !== undefined && { presidentPhone: data.presidentPhone }),
+        ...(data.secretaryName !== undefined && { secretaryName: data.secretaryName }),
+        ...(data.secretaryEmail !== undefined && { secretaryEmail: data.secretaryEmail }),
+        ...(data.secretaryPhone !== undefined && { secretaryPhone: data.secretaryPhone }),
+        ...(data.socialFacebook !== undefined && { socialFacebook: data.socialFacebook }),
+        ...(data.socialInstagram !== undefined && { socialInstagram: data.socialInstagram }),
+        ...(data.socialTwitter !== undefined && { socialTwitter: data.socialTwitter }),
+        ...(data.socialYoutube !== undefined && { socialYoutube: data.socialYoutube }),
+        ...(data.logoUrl !== undefined && { logoUrl: data.logoUrl }),
+      }
+    });
+
+    logger.info(`Organization details updated for ${organizationId}`);
+    return updated;
+  }
+
+  // Helper functions
+  private isValidHexColor(color: string): boolean {
+    return /^#[0-9A-F]{6}$/i.test(color);
+  }
+
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
 }
 
 export const organizationService = new OrganizationService();

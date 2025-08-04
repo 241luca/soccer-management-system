@@ -107,16 +107,30 @@ const OrganizationSwitcher = ({ currentOrganization, onSwitch }) => {
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden ${
                     org.id === currentOrganization?.id
-                      ? 'bg-blue-200'
-                      : 'bg-gray-200'
+                      ? 'ring-2 ring-blue-500'
+                      : ''
                   }`}>
-                    <Building2 className={`h-4 w-4 ${
-                      org.id === currentOrganization?.id
-                        ? 'text-blue-700'
-                        : 'text-gray-600'
-                    }`} />
+                    {org.logoUrl ? (
+                      <img 
+                        src={org.logoUrl} 
+                        alt={org.name} 
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className={`w-full h-full rounded-lg flex items-center justify-center ${
+                        org.id === currentOrganization?.id
+                          ? 'bg-blue-200'
+                          : 'bg-gray-200'
+                      }`}>
+                        <Building2 className={`h-4 w-4 ${
+                          org.id === currentOrganization?.id
+                            ? 'text-blue-700'
+                            : 'text-gray-600'
+                        }`} />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className="font-medium text-sm">{org.name}</p>

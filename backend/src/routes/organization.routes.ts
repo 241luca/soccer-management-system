@@ -76,6 +76,47 @@ router.patch('/current',
   })
 );
 
+// Get organization details (anagrafica completa)
+router.get('/current/details',
+  extractOrganization,
+  authenticate,
+  requireOrganization,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const details = await organizationService.getOrganizationDetails(
+      req.organization!.id
+    );
+    res.json(details);
+  })
+);
+
+// Update organization details (anagrafica completa)
+router.patch('/current/details',
+  extractOrganization,
+  authenticate,
+  requireOrganization,
+  requirePermissions('ORGANIZATION_UPDATE'),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const updated = await organizationService.updateOrganizationDetails(
+      req.organization!.id,
+      req.body
+    );
+    res.json(updated);
+  })
+);
+
+// Upload organization logo
+router.post('/current/logo',
+  extractOrganization,
+  authenticate,
+  requireOrganization,
+  requirePermissions('ORGANIZATION_UPDATE'),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    // Questo endpoint verrà implementato con multer per gestire l'upload
+    // Per ora restituiamo un placeholder
+    res.status(501).json({ message: 'Logo upload not implemented yet' });
+  })
+);
+
 // User management
 router.get('/users',
   extractOrganization,

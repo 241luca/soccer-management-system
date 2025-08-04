@@ -55,6 +55,45 @@ model Organization {
   code      String   @unique
   logoUrl   String?
   settings  Json     @default("{}")
+  
+  // Anagrafica completa
+  fullName         String?
+  address          String?
+  city             String?
+  province         String?  @db.VarChar(2)
+  postalCode       String?  @db.VarChar(5)
+  country          String?  @default("IT") @db.VarChar(2)
+  phone            String?
+  email            String?
+  website          String?
+  fiscalCode       String?
+  vatNumber        String?
+  foundedYear      Int?
+  federationNumber String?
+  iban             String?
+  bankName         String?
+  
+  // Colori societari
+  primaryColor     String?  @default("#3B82F6") @db.VarChar(7)
+  secondaryColor   String?  @default("#1E40AF") @db.VarChar(7)
+  
+  // Info aggiuntive
+  description      String?  @db.Text
+  
+  // Contatti dirigenza
+  presidentName    String?
+  presidentEmail   String?
+  presidentPhone   String?
+  secretaryName    String?
+  secretaryEmail   String?
+  secretaryPhone   String?
+  
+  // Social media
+  socialFacebook   String?
+  socialInstagram  String?
+  socialTwitter    String?
+  socialYoutube    String?
+  
   // Multi-tenant fields
   subdomain    String?  @unique
   plan         String   @default("basic")
@@ -86,6 +125,10 @@ model Organization {
   roles        Role[]
   invitations  OrganizationInvitation[]
   userOrganizations UserOrganization[]
+  
+  @@index([fiscalCode])
+  @@index([vatNumber])
+  @@index([federationNumber])
 }
 
 model User {
