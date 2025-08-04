@@ -1,12 +1,20 @@
 // hooks/useNotifications.js
 import { useState, useCallback, useEffect } from 'react';
-import { generateDemoNotifications, generateNotificationSettings } from '../data/notificationDemoData';
 
 let globalNotificationId = 0;
 
 export const useNotifications = () => {
-  const [notifications, setNotifications] = useState(generateDemoNotifications());
-  const [settings, setSettings] = useState(generateNotificationSettings());
+  const [notifications, setNotifications] = useState([]);
+  const [settings, setSettings] = useState({
+    email: true,
+    push: true,
+    sms: false,
+    documentExpiry: true,
+    paymentReminders: true,
+    matchReminders: true,
+    transportUpdates: true,
+    systemUpdates: true
+  });
 
   const generateId = () => {
     globalNotificationId += 1;
