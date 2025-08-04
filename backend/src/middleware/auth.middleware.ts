@@ -1,17 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { UnauthorizedError } from '../utils/errors';
+import { AuthRequest } from '../types/auth.types';
 
-const prisma = new PrismaClient();
-
-export interface AuthRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    role: string;
-    organizationId: string;
-  };
-}
+// Re-export AuthRequest for backward compatibility
+export type { AuthRequest };
 
 export const authenticate = async (
   req: AuthRequest,
@@ -19,124 +12,77 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const authHeader = req.headers.authorization;
     
-    if (!token) {
-      return res.status(401).json({
-        error: {
-          code: 'NO_TOKEN',
-          message: 'No authentication token provided'
-        }
-      });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedError('No token provided');
     }
     
+    const token = authHeader.substring(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
     
-    // Check if user still exists and is active
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, isActive: true }
-    });
-    
-    if (!user || !user.isActive) {
-      return res.status(401).json({
-        error: {
-          code: 'INVALID_USER',
-          message: 'User not found or inactive'
-        }
-      });
-    }
-    
+    // Normalize user object
     req.user = {
+      id: decoded.userId || decoded.id,
       userId: decoded.userId,
       email: decoded.email,
-      role: decoded.role || 'USER',
-      organizationId: decoded.organizationId
+      name: decoded.name,
+      firstName: decoded.firstName,
+      lastName: decoded.lastName,
+      role: decoded.role,
+      organizationId: decoded.organizationId,
+      roleId: decoded.roleId,
+      permissions: decoded.permissions || [],
+      isSuperAdmin: decoded.isSuperAdmin || false,
+      isActive: decoded.isActive !== false
     };
     
-    return next();
+    next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({
-        error: {
-          code: 'TOKEN_EXPIRED',
-          message: 'Authentication token has expired'
-        }
-      });
+      return next(new UnauthorizedError('Token expired'));
     }
-    
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token'
-        }
-      });
+      return next(new UnauthorizedError('Invalid token'));
     }
-    
-    return res.status(500).json({
-      error: {
-        code: 'AUTH_ERROR',
-        message: 'Authentication error'
-      }
-    });
+    next(error);
   }
 };
 
 export const authorize = (...allowedRoles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return res.status(401).json({
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'User not authenticated'
-        }
-      });
+      return next(new UnauthorizedError('Not authenticated'));
     }
     
-    if (!allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({
-        error: {
-          code: 'FORBIDDEN',
-          message: 'Insufficient permissions'
-        }
-      });
+    if (req.user.isSuperAdmin) {
+      return next();
     }
     
-    return next();
+    const userRole = req.user.role || req.user.organizationRole;
+    
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      return next(new UnauthorizedError('Insufficient permissions'));
+    }
+    
+    next();
   };
 };
 
-// Optional auth - doesn't fail if no token, but attaches user if valid token
-export const optionalAuth = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-      
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
-        select: { id: true, isActive: true }
-      });
-      
-      if (user && user.isActive) {
-        req.user = {
-          userId: decoded.userId,
-          email: decoded.email,
-          role: decoded.role || 'USER',
-          organizationId: decoded.organizationId
-        };
-      }
+export const requirePermission = (permission: string) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(new UnauthorizedError('Not authenticated'));
     }
     
-    return next();
-  } catch (error) {
-    // Continue without user context
-    return next();
-  }
+    if (req.user.isSuperAdmin) {
+      return next();
+    }
+    
+    if (!req.user.permissions || !req.user.permissions.includes(permission)) {
+      return next(new UnauthorizedError(`Missing required permission: ${permission}`));
+    }
+    
+    next();
+  };
 };

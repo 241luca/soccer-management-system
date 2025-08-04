@@ -652,46 +652,67 @@ export class AuthService {
   }
 
   // Super Admin methods
-  async loginSuperAdmin(email: string, password: string) {
-    const superAdmin = await prisma.superAdmin.findUnique({
+    async loginSuperAdmin(email: string, password: string) {
+    // Check if it's a valid superadmin email
+    const SUPER_ADMIN_EMAILS = ['superadmin@soccermanager.com'];
+    
+    if (!SUPER_ADMIN_EMAILS.includes(email)) {
+      throw new UnauthorizedError('Invalid super admin credentials');
+    }
+
+    // Find user in regular User table
+    const user = await prisma.user.findUnique({
       where: { email }
     });
 
-    if (!superAdmin || !superAdmin.isActive) {
+    if (!user || !user.isActive) {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, superAdmin.passwordHash);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    await prisma.superAdmin.update({
-      where: { id: superAdmin.id },
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
       data: { lastLogin: new Date() }
     });
 
-    const token = jwt.sign(
-      {
-        userId: superAdmin.id,
-        email: superAdmin.email,
-        isSuperAdmin: true
-      },
+    // Generate super admin token without organization context
+    const payload = {
+      userId: user.id,
+      email: user.email,
+      isSuperAdmin: true,
+      permissions: ['*'] // All permissions
+    };
+
+    const accessToken = jwt.sign(
+      payload,
       this.JWT_SECRET,
       { expiresIn: this.JWT_EXPIRES_IN } as jwt.SignOptions
     );
 
-    logger.info(`Super admin ${superAdmin.email} logged in`);
+    const refreshToken = jwt.sign(
+      payload,
+      this.JWT_REFRESH_SECRET,
+      { expiresIn: this.JWT_REFRESH_EXPIRES_IN } as jwt.SignOptions
+    );
+
+    logger.info(`Super admin ${user.email} logged in`);
 
     return {
       user: {
-        id: superAdmin.id,
-        email: superAdmin.email,
-        firstName: superAdmin.firstName,
-        lastName: superAdmin.lastName,
-        role: 'SUPER_ADMIN'
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: 'SUPER_ADMIN',
+        isSuperAdmin: true
       },
-      accessToken: token
+      accessToken,
+      refreshToken
     };
   }
 

@@ -249,6 +249,32 @@ enum PaymentStatus {
 4. **Organization Context**
 5. **Role-based Authorization**
 
+## 🆕 Modifiche Recenti (Agosto 2025)
+
+### 1. Rimozione Completa Dati Demo
+- ✅ Eliminata dipendenza da `demoData.js`
+- ✅ Rimossa variabile `VITE_USE_API` (non più necessaria)
+- ✅ Sistema sempre connesso al backend
+- ✅ Nessuna modalità offline
+
+### 2. Multi-Tenant Completo
+- ✅ Creata organizzazione ASD Ravenna Calcio (produzione)
+- ✅ Sistema di selezione società per utenti multi-org
+- ✅ Fix autenticazione con UserOrganization obbligatorio
+- ✅ SuperAdmin con tabella e endpoint dedicati
+
+### 3. Miglioramenti UI Login
+- ✅ Schermata login con tutte le credenziali
+- ✅ Badge colorati per tipo utente
+- ✅ OrganizationSelector ridisegnato
+- ✅ Gestione errori migliorata
+
+### 4. Fix Database e Autenticazione
+- ✅ Corretta gestione hash password con bcrypt
+- ✅ Sistemate relazioni UserOrganization
+- ✅ Rimosso `isDefault` per utenti multi-org
+- ✅ Script di setup automatizzati
+
 ## 🆕 Modifiche Recenti (Gennaio 2025)
 
 ### 1. Fix Sistema di Autenticazione
@@ -321,13 +347,25 @@ git push origin main
 
 ## 📞 Credenziali Test
 
-### Admin Demo
-- Email: `admin@demosoccerclub.com`
-- Password: `admin123`
+### Demo Organization
+- Email: `demo@soccermanager.com`
+- Password: `demo123456`
+- Accesso: Solo Demo Soccer Club
+
+### Production Organization (ASD Ravenna)
+- Email: `admin@asdravennacalcio.it`
+- Password: `ravenna2024!`
+- Accesso: Solo ASD Ravenna Calcio
+
+### Multi-Organization Manager
+- Email: `manager@soccermanager.com`
+- Password: `manager2024!`
+- Accesso: Demo + Ravenna (con selezione)
 
 ### Super Admin
 - Email: `superadmin@soccermanager.com`  
 - Password: `superadmin123456`
+- Accesso: Globale (tutte le organizzazioni)
 
 ## 🚢 Deploy
 
@@ -347,4 +385,4 @@ MIT
 - GitHub: [@241luca](https://github.com/241luca)
 
 ---
-*Ultimo aggiornamento: Gennaio 2025*
+*Ultimo aggiornamento: Agosto 2025*

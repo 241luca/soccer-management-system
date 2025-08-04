@@ -101,7 +101,7 @@ router.post('/invite',
       organizationId: req.organization!.id,
       email: data.email,
       roleId: data.roleId,
-      invitedBy: req.user!.userId
+      invitedBy: req.user?.id || req.user?.userId || ""
     });
     res.status(201).json(invitation);
   })
@@ -123,7 +123,7 @@ router.delete('/users/:userId',
     await organizationService.removeUser(
       req.params.userId,
       req.organization!.id,
-      req.user!.userId
+      req.user?.id || req.user?.userId || ""
     );
     res.status(204).send();
   })
@@ -139,7 +139,7 @@ router.patch('/users/:userId/role',
       userId: req.params.userId,
       organizationId: req.organization!.id,
       roleId: req.body.roleId,
-      updatedBy: req.user!.userId
+      updatedBy: req.user?.id || req.user?.userId || ""
     });
     res.json(updated);
   })
@@ -221,7 +221,7 @@ router.post('/transfer-ownership',
     await organizationService.transferOwnership(
       req.organization!.id,
       req.body.newOwnerId,
-      req.user!.userId
+      req.user?.id || req.user?.userId || ""
     );
     res.json({ message: 'Ownership transferred successfully' });
   })

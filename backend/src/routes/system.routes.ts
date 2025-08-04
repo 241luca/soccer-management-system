@@ -1,39 +1,19 @@
-import { Router } from 'express';
-import { authenticate } from '../middleware/multi-tenant.middleware';
+import { Router, Response } from 'express';
+import { authenticate, requireSuperAdmin, AuthRequest } from '../middleware/multi-tenant.middleware';
 import { getRateLimitStatus, toggleRateLimit } from '../middleware/rateLimit.middleware';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-// Middleware to check if user is super admin
-const requireSuperAdmin = async (req: any, res: any, next: any) => {
-  if (!req.user?.isSuperAdmin) {
-    // Check if user is a super admin
-    const superAdmin = await prisma.superAdmin.findUnique({
-      where: { id: req.user?.userId }
-    });
-    
-    if (!superAdmin) {
-      return res.status(403).json({
-        error: {
-          code: 'FORBIDDEN',
-          message: 'Super admin access required'
-        }
-      });
-    }
-  }
-  next();
-};
-
 // Get rate limit status
-router.get('/rate-limit/status', authenticate, requireSuperAdmin, (req, res) => {
+router.get('/rate-limit/status', authenticate, requireSuperAdmin, (req: AuthRequest, res: Response) => {
   const status = getRateLimitStatus();
   res.json(status);
 });
 
 // Toggle rate limiting
-router.post('/rate-limit/toggle', authenticate, requireSuperAdmin, (req, res) => {
+router.post('/rate-limit/toggle', authenticate, requireSuperAdmin, (req: AuthRequest, res: Response) => {
   const { enabled } = req.body;
   
   if (typeof enabled !== 'boolean') {
@@ -47,43 +27,48 @@ router.post('/rate-limit/toggle', authenticate, requireSuperAdmin, (req, res) =>
   
   toggleRateLimit(enabled);
   
-  res.json({
+  return res.json({
     message: `Rate limiting ${enabled ? 'enabled' : 'disabled'}`,
     status: getRateLimitStatus()
   });
 });
 
 // Get system statistics
-router.get('/system/stats', authenticate, requireSuperAdmin, async (req, res, next) => {
+router.get('/system/stats', authenticate, requireSuperAdmin, async (req: AuthRequest, res: Response, next) => {
   try {
     const [
       organizationsCount,
       usersCount,
       athletesCount,
-      activeOrganizations
+      teamsCount
     ] = await Promise.all([
       prisma.organization.count(),
       prisma.user.count(),
       prisma.athlete.count(),
-      prisma.organization.count({ where: { isActive: true } })
+      prisma.team.count()
     ]);
     
     res.json({
-      organizations: {
-        total: organizationsCount,
-        active: activeOrganizations
-      },
-      users: {
-        total: usersCount
-      },
-      athletes: {
-        total: athletesCount
-      },
-      rateLimit: getRateLimitStatus()
+      organizations: organizationsCount,
+      users: usersCount,
+      athletes: athletesCount,
+      teams: teamsCount,
+      timestamp: new Date()
     });
   } catch (error) {
     next(error);
   }
+});
+
+// Health check
+router.get('/health', (req: AuthRequest, res: Response) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
+  });
 });
 
 export default router;

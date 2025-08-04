@@ -75,7 +75,8 @@ const SoccerManagementApp = () => {
     }
   };
 
-  if (authLoading || loading) {
+  // Only show loading screen for auth, not for data
+  if (authLoading) {
     return <LoadingScreen />;
   }
 

@@ -1,9 +1,9 @@
 // hooks/useApiData.js
+// VERSIONE SENZA DATI DEMO - USA SEMPRE IL BACKEND
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../services/api';
 import { useNotifications } from './useNotifications';
 import { useToast } from './useToast';
-import { generateDemoData } from '../data/demoData';
 
 export const useApiData = () => {
   const [data, setData] = useState({ 
@@ -16,6 +16,7 @@ export const useApiData = () => {
     payments: [],
     figcRules: {} 
   });
+  
   const [stats, setStats] = useState({
     totalAthletes: 0,
     totalTeams: 0,
@@ -25,7 +26,8 @@ export const useApiData = () => {
     pendingPayments: 0,
     busUsers: 0
   });
-  const [loading, setLoading] = useState(true);
+  
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const isLoadingRef = useRef(false);
   
@@ -33,13 +35,18 @@ export const useApiData = () => {
   const notificationSystem = useNotifications();
   const toastSystem = useToast();
 
-  // Check if we should use API or demo data
-  const useApi = import.meta.env.VITE_USE_API === 'true';
-
-  // Load data from API
+  // Load data from API - SEMPRE E SOLO API, NESSUN DATO DEMO
   const loadApiData = useCallback(async () => {
     // Prevent multiple simultaneous loads
     if (isLoadingRef.current) return;
+    
+    // Don't load if no token (user not logged in)
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('No token found, skipping API load');
+      setLoading(false);
+      return;
+    }
     
     try {
       isLoadingRef.current = true;
@@ -53,10 +60,11 @@ export const useApiData = () => {
         api.getDashboardStats(),
         api.getAthletes(),
         api.getTeams(),
-        // Commented out endpoints that might not be ready
-        // api.getDocuments(),
-        // api.getPayments(),
-        // api.getMatches()
+        api.getDocuments(),
+        api.getPayments(),
+        api.getMatches(),
+        api.getTransportZones(),
+        api.getBuses()
       ]);
 
       console.log('API results:', results);
@@ -78,264 +86,273 @@ export const useApiData = () => {
       // Process athletes
       let athletesData = [];
       if (results[1].status === 'fulfilled') {
-        // Handle both possible response formats
         athletesData = results[1].value.athletes || results[1].value.data || [];
       }
 
       // Process teams
       let teamsData = [];
       if (results[2].status === 'fulfilled') {
-        // Handle both possible response formats
         teamsData = results[2].value.teams || results[2].value.data || [];
+      }
+
+      // Process documents
+      let documentsData = [];
+      if (results[3].status === 'fulfilled') {
+        documentsData = results[3].value.documents || results[3].value.data || [];
+      }
+
+      // Process payments
+      let paymentsData = [];
+      if (results[4].status === 'fulfilled') {
+        paymentsData = results[4].value.payments || results[4].value.data || [];
+      }
+
+      // Process matches
+      let matchesData = [];
+      if (results[5].status === 'fulfilled') {
+        matchesData = results[5].value.matches || results[5].value.data || [];
+      }
+
+      // Process transport zones
+      let zonesData = [];
+      if (results[6].status === 'fulfilled') {
+        zonesData = results[6].value.zones || results[6].value.data || [];
+      }
+
+      // Process buses
+      let busesData = [];
+      if (results[7].status === 'fulfilled') {
+        busesData = results[7].value.buses || results[7].value.data || [];
       }
 
       // Set the data
       setData({
         athletes: athletesData,
         teams: teamsData,
-        documents: [],
-        payments: [],
-        zones: [],
-        buses: [],
-        matches: [],
-        figcRules: {}
+        documents: documentsData,
+        payments: paymentsData,
+        matches: matchesData,
+        zones: zonesData,
+        buses: busesData,
+        figcRules: {} // Questo può essere caricato separatamente se necessario
       });
 
-      setLoading(false);
-      isLoadingRef.current = false;
-      console.log('Data loaded successfully');
-    } catch (err) {
-      console.error('Error loading data from API:', err);
-      setError(err.message);
-      
-      // Fallback to demo data on error
-      console.log('Falling back to demo data...');
-      const demoData = generateDemoData();
-      setData(demoData);
-      setStats({
-        totalAthletes: demoData.athletes.length,
-        totalTeams: demoData.teams.length,
-        activeAthletes: demoData.athletes.filter(a => a.status === 'ACTIVE').length,
-        upcomingMatches: demoData.matches.filter(m => m.status === 'SCHEDULED').length,
-        expiringDocuments: 10,
-        pendingPayments: 5,
-        busUsers: demoData.athletes.filter(a => a.usesTransport).length
-      });
-      
-      setLoading(false);
-      isLoadingRef.current = false;
-      
-      // Don't show error toast for 401 - the API client will redirect to login
-      if (!err.message?.includes('401')) {
-        toastSystem.showError('Usando dati demo - Errore API: ' + err.message);
+      // Check for critical notifications
+      if (stats.expiringDocuments > 0) {
+        notificationSystem.addNotification({
+          type: 'warning',
+          title: 'Documenti in scadenza',
+          message: `Hai ${stats.expiringDocuments} documenti in scadenza nei prossimi 30 giorni`,
+          persistent: true
+        });
       }
-    }
-  }, []); // Empty deps - function doesn't change
 
-  // Load demo data
-  const loadDemoData = useCallback(async () => {
-    if (isLoadingRef.current) return;
-    
-    isLoadingRef.current = true;
-    setLoading(true);
-    console.log('Loading demo data...');
-    
-    // Simulate async loading
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const demoData = generateDemoData();
-    setData(demoData);
-    setStats({
-      totalAthletes: demoData.athletes.length,
-      totalTeams: demoData.teams.length,
-      activeAthletes: demoData.athletes.filter(a => a.status === 'ACTIVE').length,
-      upcomingMatches: demoData.matches.filter(m => m.status === 'SCHEDULED').length,
-      expiringDocuments: 10,
-      pendingPayments: 5,
-      busUsers: demoData.athletes.filter(a => a.usesTransport).length
-    });
-    setLoading(false);
-    isLoadingRef.current = false;
-    console.log('Demo data loaded');
+      if (stats.pendingPayments > 0) {
+        notificationSystem.addNotification({
+          type: 'info',
+          title: 'Pagamenti in sospeso',
+          message: `Ci sono ${stats.pendingPayments} pagamenti da completare`,
+          persistent: false
+        });
+      }
+
+    } catch (err) {
+      console.error('Error loading API data:', err);
+      setError(err.message || 'Errore nel caricamento dei dati');
+      
+      // Show error toast
+      toastSystem.showToast({
+        type: 'error',
+        message: 'Errore nel caricamento dei dati dal server'
+      });
+    } finally {
+      isLoadingRef.current = false;
+      setLoading(false);
+    }
+  }, [notificationSystem, toastSystem]);
+
+  // Initial load
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !isLoadingRef.current) {
+      loadApiData();
+    }
   }, []);
 
-  // Initial load - only once
-  useEffect(() => {
-    let mounted = true;
-
-    const loadData = async () => {
-      if (!mounted) return;
-      
-      if (useApi) {
-        await loadApiData();
-      } else {
-        await loadDemoData();
-      }
-    };
-
-    loadData();
-
-    return () => {
-      mounted = false;
-    };
-  }, []); // Empty deps - only run once on mount
-
-  // Auto-check notifications when data changes
-  useEffect(() => {
-    if (!loading && data.athletes && data.athletes.length > 0) {
-      notificationSystem.runAutoChecks(data);
-    }
-  }, [data.athletes, loading]); // Only depend on athletes and loading
-
-  // CRUD operations for athletes
-  const addAthlete = async (athlete) => {
-    if (useApi) {
-      try {
-        const newAthlete = await api.createAthlete(athlete);
-        await loadApiData(); // Reload all data
-        toastSystem.showSuccess('Atleta aggiunto con successo');
-        return newAthlete;
-      } catch (err) {
-        toastSystem.showError('Errore nell\'aggiunta dell\'atleta: ' + err.message);
-        throw err;
-      }
-    } else {
-      // Demo mode
-      const newAthlete = { ...athlete, id: Date.now() };
-      setData(prev => ({ ...prev, athletes: [...prev.athletes, newAthlete] }));
-      toastSystem.showSuccess('Atleta aggiunto con successo (demo)');
-      return newAthlete;
-    }
-  };
-
-  const updateAthlete = async (id, updates) => {
-    if (useApi) {
-      try {
-        const updatedAthlete = await api.updateAthlete(id, updates);
-        await loadApiData(); // Reload all data
-        toastSystem.showSuccess('Atleta aggiornato con successo');
-        return updatedAthlete;
-      } catch (err) {
-        toastSystem.showError('Errore nell\'aggiornamento dell\'atleta: ' + err.message);
-        throw err;
-      }
-    } else {
-      // Demo mode
+  // CRUD Operations
+  const addAthlete = useCallback(async (athleteData) => {
+    try {
+      const newAthlete = await api.createAthlete(athleteData);
       setData(prev => ({
         ...prev,
-        athletes: prev.athletes.map(a => a.id === id ? { ...a, ...updates } : a)
+        athletes: [...prev.athletes, newAthlete]
       }));
-      toastSystem.showSuccess('Atleta aggiornato con successo (demo)');
-      return { id, ...updates };
+      
+      toastSystem.showToast({
+        type: 'success',
+        message: 'Atleta aggiunto con successo'
+      });
+      
+      return newAthlete;
+    } catch (err) {
+      toastSystem.showToast({
+        type: 'error',
+        message: err.message || 'Errore nell\'aggiunta dell\'atleta'
+      });
+      throw err;
     }
-  };
+  }, [toastSystem]);
 
-  const deleteAthlete = async (id) => {
-    if (useApi) {
-      try {
-        await api.deleteAthlete(id);
-        await loadApiData(); // Reload all data
-        toastSystem.showSuccess('Atleta eliminato con successo');
-      } catch (err) {
-        toastSystem.showError('Errore nell\'eliminazione dell\'atleta: ' + err.message);
-        throw err;
-      }
-    } else {
-      // Demo mode
+  const updateAthlete = useCallback(async (id, updates) => {
+    try {
+      const updatedAthlete = await api.updateAthlete(id, updates);
+      setData(prev => ({
+        ...prev,
+        athletes: prev.athletes.map(a => 
+          a.id === id ? { ...a, ...updatedAthlete } : a
+        )
+      }));
+      
+      toastSystem.showToast({
+        type: 'success',
+        message: 'Atleta aggiornato con successo'
+      });
+      
+      return updatedAthlete;
+    } catch (err) {
+      toastSystem.showToast({
+        type: 'error',
+        message: err.message || 'Errore nell\'aggiornamento dell\'atleta'
+      });
+      throw err;
+    }
+  }, [toastSystem]);
+
+  const deleteAthlete = useCallback(async (id) => {
+    try {
+      await api.deleteAthlete(id);
       setData(prev => ({
         ...prev,
         athletes: prev.athletes.filter(a => a.id !== id)
       }));
-      toastSystem.showSuccess('Atleta eliminato con successo (demo)');
+      
+      toastSystem.showToast({
+        type: 'success',
+        message: 'Atleta eliminato con successo'
+      });
+    } catch (err) {
+      toastSystem.showToast({
+        type: 'error',
+        message: err.message || 'Errore nell\'eliminazione dell\'atleta'
+      });
+      throw err;
     }
-  };
+  }, [toastSystem]);
 
-  // CRUD operations for teams
-  const addTeam = async (team) => {
-    if (useApi) {
-      try {
-        const newTeam = await api.createTeam(team);
-        await loadApiData();
-        toastSystem.showSuccess('Squadra creata con successo');
-        return newTeam;
-      } catch (err) {
-        toastSystem.showError('Errore nella creazione della squadra: ' + err.message);
-        throw err;
-      }
-    } else {
-      const newTeam = { ...team, id: Date.now() };
-      setData(prev => ({ ...prev, teams: [...prev.teams, newTeam] }));
-      toastSystem.showSuccess('Squadra creata con successo (demo)');
-      return newTeam;
-    }
-  };
-
-  const updateTeam = async (id, updates) => {
-    if (useApi) {
-      try {
-        const updatedTeam = await api.updateTeam(id, updates);
-        await loadApiData();
-        toastSystem.showSuccess('Squadra aggiornata con successo');
-        return updatedTeam;
-      } catch (err) {
-        toastSystem.showError('Errore nell\'aggiornamento della squadra: ' + err.message);
-        throw err;
-      }
-    } else {
+  // Similar methods for teams
+  const addTeam = useCallback(async (teamData) => {
+    try {
+      const newTeam = await api.createTeam(teamData);
       setData(prev => ({
         ...prev,
-        teams: prev.teams.map(t => t.id === id ? { ...t, ...updates } : t)
+        teams: [...prev.teams, newTeam]
       }));
-      toastSystem.showSuccess('Squadra aggiornata con successo (demo)');
-      return { id, ...updates };
+      
+      toastSystem.showToast({
+        type: 'success',
+        message: 'Squadra aggiunta con successo'
+      });
+      
+      return newTeam;
+    } catch (err) {
+      toastSystem.showToast({
+        type: 'error',
+        message: err.message || 'Errore nell\'aggiunta della squadra'
+      });
+      throw err;
     }
-  };
+  }, [toastSystem]);
 
-  const deleteTeam = async (id) => {
-    if (useApi) {
-      try {
-        await api.deleteTeam(id);
-        await loadApiData();
-        toastSystem.showSuccess('Squadra eliminata con successo');
-      } catch (err) {
-        toastSystem.showError('Errore nell\'eliminazione della squadra: ' + err.message);
-        throw err;
-      }
-    } else {
+  const updateTeam = useCallback(async (id, updates) => {
+    try {
+      const updatedTeam = await api.updateTeam(id, updates);
+      setData(prev => ({
+        ...prev,
+        teams: prev.teams.map(t => 
+          t.id === id ? { ...t, ...updatedTeam } : t
+        )
+      }));
+      
+      toastSystem.showToast({
+        type: 'success',
+        message: 'Squadra aggiornata con successo'
+      });
+      
+      return updatedTeam;
+    } catch (err) {
+      toastSystem.showToast({
+        type: 'error',
+        message: err.message || 'Errore nell\'aggiornamento della squadra'
+      });
+      throw err;
+    }
+  }, [toastSystem]);
+
+  const deleteTeam = useCallback(async (id) => {
+    try {
+      await api.deleteTeam(id);
       setData(prev => ({
         ...prev,
         teams: prev.teams.filter(t => t.id !== id)
       }));
-      toastSystem.showSuccess('Squadra eliminata con successo (demo)');
+      
+      toastSystem.showToast({
+        type: 'success',
+        message: 'Squadra eliminata con successo'
+      });
+    } catch (err) {
+      toastSystem.showToast({
+        type: 'error',
+        message: err.message || 'Errore nell\'eliminazione della squadra'
+      });
+      throw err;
     }
-  };
+  }, [toastSystem]);
 
   // Refresh data
-  const refreshData = () => {
-    if (useApi) {
-      loadApiData();
-    } else {
-      loadDemoData();
-    }
-  };
+  const refreshData = useCallback(() => {
+    return loadApiData();
+  }, [loadApiData]);
 
   return {
+    // Data
     data,
     stats,
     loading,
     error,
+    
+    // Methods
+    refreshData,
+    
+    // CRUD operations
+    addAthlete,
+    updateAthlete,
+    deleteAthlete,
+    addTeam,
+    updateTeam,
+    deleteTeam,
+    
+    // Direct access to frequently used data
+    athletes: data.athletes,
+    teams: data.teams,
+    zones: data.zones,
+    buses: data.buses,
+    matches: data.matches,
+    documents: data.documents,
+    payments: data.payments,
+    
+    // Notification and Toast systems
     notifications: notificationSystem,
-    toast: toastSystem,
-    actions: {
-      addAthlete,
-      updateAthlete,
-      deleteAthlete,
-      addTeam,
-      updateTeam,
-      deleteTeam,
-      refreshData
-    }
+    toast: toastSystem
   };
 };
-
-// Export as default for backward compatibility
-export const useData = useApiData;

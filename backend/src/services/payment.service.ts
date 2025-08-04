@@ -1,90 +1,84 @@
-import { PrismaClient, Payment, Prisma } from '@prisma/client';
-import { NotFoundError, BadRequestError } from '../middleware/error.middleware';
+import { PrismaClient, Payment, PaymentStatus } from '@prisma/client';
+import { BadRequestError, NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { notificationService } from './notification.service';
 
 const prisma = new PrismaClient();
 
 export interface CreatePaymentInput {
+  organizationId: string;
   athleteId: string;
-  paymentTypeId: string;
+  paymentTypeId?: string;
+  type?: string;
+  description: string;
   amount: number;
   dueDate: Date;
-  description?: string;
-  invoiceNumber?: string;
   notes?: string;
 }
 
-export interface UpdatePaymentInput extends Partial<CreatePaymentInput> {
-  status?: 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED';
-  paidDate?: Date;
-  paymentMethod?: 'CASH' | 'BANK_TRANSFER' | 'CREDIT_CARD' | 'CHECK' | 'OTHER';
-  transactionReference?: string;
+export interface UpdatePaymentInput {
+  id: string;
+  organizationId: string;
+  description?: string;
+  amount?: number;
+  dueDate?: Date;
+  status?: PaymentStatus;
+  notes?: string;
 }
 
 export interface RecordPaymentInput {
-  paymentMethod: 'CASH' | 'BANK_TRANSFER' | 'CREDIT_CARD' | 'CHECK' | 'OTHER';
+  id: string;
+  organizationId: string;
   paidDate: Date;
-  transactionReference?: string;
+  paymentMethod: string;
+  transactionId?: string;
   notes?: string;
 }
 
-export class PaymentService {
-  async findAll(organizationId: string, params?: {
-    athleteId?: string;
+export interface PaymentWithDetails extends Payment {
+  athlete?: {
+    id: string;
+    firstName: string;
+    lastName: string;
     teamId?: string;
-    paymentTypeId?: string;
-    status?: string;
-    fromDate?: Date;
-    toDate?: Date;
-    overdue?: boolean;
-    page?: number;
-    limit?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-  }) {
-    const page = params?.page || 1;
-    const limit = params?.limit || 20;
-    const skip = (page - 1) * limit;
+  };
+  paymentType?: {
+    id: string;
+    name: string;
+  };
+}
 
-    const where: Prisma.PaymentWhereInput = {
-      athlete: { organizationId }
-    };
-
-    if (params?.athleteId) {
-      where.athleteId = params.athleteId;
-    }
-
-    if (params?.teamId) {
-      where.athlete = { 
-        organizationId,
-        teamId: params.teamId 
-      };
-    }
-
-    if (params?.paymentTypeId) {
-      where.paymentTypeId = params.paymentTypeId;
-    }
-
-    if (params?.status) {
-      where.status = params.status as any;
-    }
-
-    if (params?.fromDate || params?.toDate) {
-      where.dueDate = {
-        ...(params.fromDate && { gte: new Date(params.fromDate) }),
-        ...(params.toDate && { lte: new Date(params.toDate) })
-      };
-    }
-
-    // Filter overdue payments
-    if (params?.overdue) {
-      where.status = 'PENDING';
-      where.dueDate = { lt: new Date() };
-    }
-
-    const [payments, total] = await Promise.all([
-      prisma.payment.findMany({
+export class PaymentService {
+  // Get all payments for organization
+  async getPayments(organizationId: string, filters?: any): Promise<PaymentWithDetails[]> {
+    try {
+      const where: any = { organizationId };
+      
+      if (filters?.athleteId) {
+        where.athleteId = filters.athleteId;
+      }
+      
+      if (filters?.status) {
+        where.status = filters.status;
+      }
+      
+      if (filters?.overdue === 'true') {
+        where.status = 'PENDING';
+        where.dueDate = {
+          lt: new Date()
+        };
+      }
+      
+      if (filters?.month && filters?.year) {
+        const startDate = new Date(filters.year, filters.month - 1, 1);
+        const endDate = new Date(filters.year, filters.month, 0);
+        
+        where.dueDate = {
+          gte: startDate,
+          lte: endDate
+        };
+      }
+      
+      const payments = await prisma.payment.findMany({
         where,
         include: {
           athlete: {
@@ -92,448 +86,565 @@ export class PaymentService {
               id: true,
               firstName: true,
               lastName: true,
-              team: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
+              teamId: true
             }
           },
-          paymentType: true
+          paymentType: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
         },
-        skip,
-        take: limit,
-        orderBy: params?.sortBy ? {
-          [params.sortBy]: params.sortOrder || 'desc'
-        } : { dueDate: 'desc' }
-      }),
-      prisma.payment.count({ where })
-    ]);
-
-    // Enrich with calculated fields
-    const today = new Date();
-    const enrichedPayments = payments.map(payment => {
-      const daysOverdue = payment.status === 'PENDING' && payment.dueDate < today
-        ? Math.floor((today.getTime() - payment.dueDate.getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
-
-      return {
-        ...payment,
-        athleteName: `${payment.athlete.firstName} ${payment.athlete.lastName}`,
-        teamName: payment.athlete.team?.name,
-        isOverdue: daysOverdue > 0,
-        daysOverdue
-      };
-    });
-
-    return {
-      data: enrichedPayments,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    };
+        orderBy: [
+          { status: 'asc' },
+          { dueDate: 'desc' }
+        ]
+      });
+      
+      // Update overdue payments
+      const updatedPayments = await Promise.all(
+        payments.map(async (payment) => {
+          if (payment.status === 'PENDING' && new Date(payment.dueDate) < new Date()) {
+            return await prisma.payment.update({
+              where: { id: payment.id },
+              data: { status: 'OVERDUE' },
+              include: {
+                athlete: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    teamId: true
+                  }
+                },
+                paymentType: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              }
+            });
+          }
+          return payment;
+        })
+      );
+      
+      return updatedPayments;
+    } catch (error) {
+      logger.error('Error fetching payments:', error);
+      throw error;
+    }
   }
-
-  async findById(id: string, organizationId: string) {
+  
+  // Get payments for specific athlete
+  async getAthletePayments(athleteId: string, organizationId: string): Promise<Payment[]> {
+    const payments = await prisma.payment.findMany({
+      where: {
+        athleteId,
+        organizationId
+      },
+      orderBy: {
+        dueDate: 'desc'
+      }
+    });
+    
+    return payments;
+  }
+  
+  // Get single payment
+  async getPaymentById(id: string, organizationId: string): Promise<PaymentWithDetails> {
     const payment = await prisma.payment.findFirst({
       where: {
         id,
-        athlete: { organizationId }
+        organizationId
       },
       include: {
         athlete: {
-          include: { team: true }
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            teamId: true,
+            email: true,
+            phone: true
+          }
         },
         paymentType: true
       }
     });
-
+    
     if (!payment) {
-      throw NotFoundError('Payment');
+      throw new NotFoundError('Payment not found');
     }
-
-    const today = new Date();
-    const daysOverdue = payment.status === 'PENDING' && payment.dueDate < today
-      ? Math.floor((today.getTime() - payment.dueDate.getTime()) / (1000 * 60 * 60 * 24))
-      : 0;
-
-    return {
-      ...payment,
-      isOverdue: daysOverdue > 0,
-      daysOverdue
-    };
-  }
-
-  async create(data: CreatePaymentInput, organizationId: string) {
-    // Validate athlete belongs to organization
-    const athlete = await prisma.athlete.findFirst({
-      where: {
-        id: data.athleteId,
-        organizationId
-      }
-    });
-
-    if (!athlete) {
-      throw BadRequestError('Invalid athlete ID');
-    }
-
-    // Validate payment type
-    const paymentType = await prisma.paymentType.findUnique({
-      where: { id: data.paymentTypeId }
-    });
-
-    if (!paymentType) {
-      throw BadRequestError('Invalid payment type');
-    }
-
-    const payment = await prisma.payment.create({
-      data: {
-        ...data,
-        amount: new Prisma.Decimal(data.amount),
-        dueDate: new Date(data.dueDate),
-        status: 'PENDING',
-        type: paymentType.type
-      },
-      include: {
-        athlete: true,
-        paymentType: true
-      }
-    });
-
-    logger.info(`New payment created: ${paymentType.name} for ${athlete.firstName} ${athlete.lastName}`);
-
-    // Create notification for new payment
-    await notificationService.create({
-      organizationId,
-      type: 'payment_created',
-      severity: 'info',
-      title: 'Nuovo Pagamento Registrato',
-      message: `Pagamento di €${data.amount} per ${paymentType.name} registrato per ${athlete.firstName} ${athlete.lastName}`,
-      relatedEntityType: 'payment',
-      relatedEntityId: payment.id
-    });
-
+    
     return payment;
   }
-
-  async update(id: string, data: UpdatePaymentInput, organizationId: string) {
-    const payment = await this.findById(id, organizationId);
-
-    const updated = await prisma.payment.update({
-      where: { id },
-      data: {
-        ...data,
-        amount: data.amount ? new Prisma.Decimal(data.amount) : undefined,
-        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
-        paidDate: data.paidDate ? new Date(data.paidDate) : undefined
-      },
-      include: {
-        athlete: true,
-        paymentType: true
-      }
-    });
-
-    logger.info(`Payment updated: ${updated.id}`);
-
-    return updated;
-  }
-
-  async recordPayment(id: string, data: RecordPaymentInput, organizationId: string) {
-    const payment = await this.findById(id, organizationId);
-
-    if (payment.status === 'PAID') {
-      throw BadRequestError('Payment has already been recorded');
-    }
-
-    if (payment.status === 'CANCELLED') {
-      throw BadRequestError('Cannot record payment for cancelled item');
-    }
-
-    const updated = await prisma.payment.update({
-      where: { id },
-      data: {
-        status: 'PAID',
-        paidDate: new Date(data.paidDate),
-        paymentMethod: data.paymentMethod,
-        transactionReference: data.transactionReference,
-        notes: data.notes
-      },
-      include: {
-        athlete: true,
-        paymentType: true
-      }
-    });
-
-    logger.info(`Payment recorded: ${updated.id} - €${updated.amount}`);
-
-    // Create success notification
-    await notificationService.create({
-      organizationId,
-      type: 'payment_received',
-      severity: 'success',
-      title: 'Pagamento Ricevuto',
-      message: `Pagamento di €${updated.amount} ricevuto da ${updated.athlete.firstName} ${updated.athlete.lastName}`,
-      relatedEntityType: 'payment',
-      relatedEntityId: updated.id
-    });
-
-    return updated;
-  }
-
-  async cancelPayment(id: string, reason: string, organizationId: string) {
-    const payment = await this.findById(id, organizationId);
-
-    if (payment.status === 'PAID') {
-      throw BadRequestError('Cannot cancel a paid payment');
-    }
-
-    const updated = await prisma.payment.update({
-      where: { id },
-      data: {
-        status: 'CANCELLED',
-        notes: reason
-      },
-      include: {
-        athlete: true,
-        paymentType: true
-      }
-    });
-
-    logger.info(`Payment cancelled: ${updated.id}`);
-
-    return updated;
-  }
-
-  async delete(id: string, organizationId: string) {
-    const payment = await this.findById(id, organizationId);
-
-    if (payment.status === 'PAID') {
-      throw BadRequestError('Cannot delete a paid payment. Consider cancelling it instead.');
-    }
-
-    await prisma.payment.delete({ where: { id } });
-
-    logger.info(`Payment deleted: ${id}`);
-
-    return { message: 'Payment deleted successfully' };
-  }
-
-  async checkOverduePayments(organizationId: string) {
-    const today = new Date();
-    
-    const overduePayments = await prisma.payment.findMany({
-      where: {
-        athlete: { organizationId },
-        status: 'PENDING',
-        dueDate: { lt: today }
-      },
-      include: {
-        athlete: true,
-        paymentType: true
-      }
-    });
-
-    // Update status to OVERDUE
-    const updatePromises = overduePayments.map(payment => 
-      prisma.payment.update({
-        where: { id: payment.id },
-        data: { status: 'OVERDUE' }
-      })
-    );
-
-    await Promise.all(updatePromises);
-
-    // Create notifications for overdue payments
-    for (const payment of overduePayments) {
-      const daysOverdue = Math.floor((today.getTime() - payment.dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      await notificationService.create({
-        organizationId,
-        type: 'payment_overdue',
-        severity: daysOverdue > 30 ? 'error' : 'warning',
-        title: 'Pagamento Scaduto',
-        message: `Il pagamento di €${payment.amount} per ${payment.paymentType.name} di ${payment.athlete.firstName} ${payment.athlete.lastName} è scaduto da ${daysOverdue} giorni`,
-        relatedEntityType: 'payment',
-        relatedEntityId: payment.id,
-        actions: [
-          { label: 'Visualizza Dettagli', action: 'view_payment', style: 'primary' },
-          { label: 'Invia Sollecito', action: 'send_reminder', style: 'secondary' }
-        ]
+  
+  // Create new payment
+  async createPayment(data: CreatePaymentInput): Promise<Payment> {
+    try {
+      // Verify athlete exists
+      const athlete = await prisma.athlete.findFirst({
+        where: {
+          id: data.athleteId,
+          organizationId: data.organizationId
+        }
       });
+      
+      if (!athlete) {
+        throw new NotFoundError('Athlete not found');
+      }
+      
+      // Determine initial status
+      const status = new Date(data.dueDate) < new Date() ? 'OVERDUE' : 'PENDING';
+      
+      const payment = await prisma.payment.create({
+        data: {
+          organizationId: data.organizationId,
+          athleteId: data.athleteId,
+          paymentTypeId: data.paymentTypeId,
+          type: data.type || 'MONTHLY',
+          description: data.description,
+          amount: data.amount,
+          dueDate: data.dueDate,
+          status,
+          notes: data.notes
+        }
+      });
+      
+      logger.info(`Payment created: ${payment.description} (${payment.id})`);
+      
+      // Create notification for new payment
+      await this.createPaymentNotification(
+        data.organizationId,
+        'NEW_PAYMENT',
+        `New payment of €${data.amount} due for ${athlete.firstName} ${athlete.lastName}`,
+        payment.id
+      );
+      
+      return payment;
+    } catch (error) {
+      logger.error('Error creating payment:', error);
+      throw error;
     }
-
-    return {
-      total: overduePayments.length,
-      totalAmount: overduePayments.reduce((sum, p) => sum + Number(p.amount), 0),
-      payments: overduePayments
-    };
   }
-
-  async getPaymentSummary(organizationId: string, params?: {
-    teamId?: string;
-    fromDate?: Date;
-    toDate?: Date;
-  }) {
-    const where: Prisma.PaymentWhereInput = {
-      athlete: { organizationId }
-    };
-
-    if (params?.teamId) {
-      where.athlete = {
-        organizationId,
-        teamId: params.teamId
-      };
+  
+  // Update payment
+  async updatePayment(data: UpdatePaymentInput): Promise<Payment> {
+    try {
+      const existing = await prisma.payment.findFirst({
+        where: {
+          id: data.id,
+          organizationId: data.organizationId
+        }
+      });
+      
+      if (!existing) {
+        throw new NotFoundError('Payment not found');
+      }
+      
+      // Don't allow updating paid payments
+      if (existing.status === 'PAID') {
+        throw new BadRequestError('Cannot update paid payment');
+      }
+      
+      // Update status if due date changed
+      let status = data.status;
+      if (data.dueDate && !data.status) {
+        status = new Date(data.dueDate) < new Date() ? 'OVERDUE' : 'PENDING';
+      }
+      
+      const payment = await prisma.payment.update({
+        where: { id: data.id },
+        data: {
+          description: data.description,
+          amount: data.amount,
+          dueDate: data.dueDate,
+          status,
+          notes: data.notes,
+          updatedAt: new Date()
+        }
+      });
+      
+      logger.info(`Payment updated: ${payment.id}`);
+      
+      return payment;
+    } catch (error) {
+      logger.error('Error updating payment:', error);
+      throw error;
     }
-
-    if (params?.fromDate || params?.toDate) {
-      where.dueDate = {
-        ...(params.fromDate && { gte: new Date(params.fromDate) }),
-        ...(params.toDate && { lte: new Date(params.toDate) })
-      };
-    }
-
-    const [totalIncome, totalExpenses, pending, overdue] = await Promise.all([
-      prisma.payment.aggregate({
-        where: {
-          ...where,
-          type: 'INCOME',
-          status: 'PAID'
-        },
-        _sum: { amount: true }
-      }),
-      prisma.payment.aggregate({
-        where: {
-          ...where,
-          type: 'EXPENSE',
-          status: 'PAID'
-        },
-        _sum: { amount: true }
-      }),
-      prisma.payment.aggregate({
-        where: {
-          ...where,
-          status: 'PENDING'
-        },
-        _sum: { amount: true },
-        _count: true
-      }),
-      prisma.payment.aggregate({
-        where: {
-          ...where,
-          status: 'OVERDUE'
-        },
-        _sum: { amount: true },
-        _count: true
-      })
-    ]);
-
-    // Get payment breakdown by type
-    const paymentTypes = await prisma.payment.groupBy({
-      by: ['paymentTypeId', 'status'],
-      where,
-      _sum: { amount: true },
-      _count: true
-    });
-
-    // Get payment types info
-    const types = await prisma.paymentType.findMany();
-    const typeMap = new Map(types.map(t => [t.id, t]));
-
-    const breakdown = paymentTypes.map(pt => ({
-      paymentType: typeMap.get(pt.paymentTypeId),
-      status: pt.status,
-      count: pt._count,
-      totalAmount: Number(pt._sum.amount || 0)
-    }));
-
-    return {
-      totalIncome: Number(totalIncome._sum.amount || 0),
-      totalExpenses: Number(totalExpenses._sum.amount || 0),
-      netBalance: Number(totalIncome._sum.amount || 0) - Number(totalExpenses._sum.amount || 0),
-      pendingAmount: Number(pending._sum.amount || 0),
-      pendingCount: pending._count,
-      overdueAmount: Number(overdue._sum.amount || 0),
-      overdueCount: overdue._count,
-      breakdown
-    };
   }
-
-  async getAthletePaymentHistory(athleteId: string, organizationId: string) {
-    // Verify athlete belongs to organization
-    const athlete = await prisma.athlete.findFirst({
+  
+  // Record payment as paid
+  async recordPayment(data: RecordPaymentInput): Promise<Payment> {
+    try {
+      const existing = await prisma.payment.findFirst({
+        where: {
+          id: data.id,
+          organizationId: data.organizationId
+        },
+        include: {
+          athlete: true
+        }
+      });
+      
+      if (!existing) {
+        throw new NotFoundError('Payment not found');
+      }
+      
+      if (existing.status === 'PAID') {
+        throw new BadRequestError('Payment already recorded as paid');
+      }
+      
+      const payment = await prisma.payment.update({
+        where: { id: data.id },
+        data: {
+          status: 'PAID',
+          paidDate: data.paidDate,
+          paymentMethod: data.paymentMethod,
+          transactionId: data.transactionId,
+          notes: data.notes ? `${existing.notes || ''}\n${data.notes}` : existing.notes,
+          updatedAt: new Date()
+        }
+      });
+      
+      logger.info(`Payment recorded as paid: ${payment.id}`);
+      
+      // Create notification
+      await this.createPaymentNotification(
+        data.organizationId,
+        'PAYMENT_RECEIVED',
+        `Payment of €${existing.amount} received from ${existing.athlete.firstName} ${existing.athlete.lastName}`,
+        payment.id
+      );
+      
+      return payment;
+    } catch (error) {
+      logger.error('Error recording payment:', error);
+      throw error;
+    }
+  }
+  
+  // Delete payment
+  async deletePayment(id: string, organizationId: string): Promise<void> {
+    try {
+      const payment = await prisma.payment.findFirst({
+        where: {
+          id,
+          organizationId
+        }
+      });
+      
+      if (!payment) {
+        throw new NotFoundError('Payment not found');
+      }
+      
+      if (payment.status === 'PAID') {
+        throw new BadRequestError('Cannot delete paid payment');
+      }
+      
+      await prisma.payment.delete({
+        where: { id }
+      });
+      
+      logger.info(`Payment deleted: ${id}`);
+    } catch (error) {
+      logger.error('Error deleting payment:', error);
+      throw error;
+    }
+  }
+  
+  // Get payment statistics
+  async getPaymentStats(organizationId: string, period?: { month?: number; year?: number }): Promise<any> {
+    try {
+      let dateFilter = {};
+      
+      if (period?.month && period?.year) {
+        const startDate = new Date(period.year, period.month - 1, 1);
+        const endDate = new Date(period.year, period.month, 0);
+        
+        dateFilter = {
+          dueDate: {
+            gte: startDate,
+            lte: endDate
+          }
+        };
+      } else if (period?.year) {
+        const startDate = new Date(period.year, 0, 1);
+        const endDate = new Date(period.year, 11, 31);
+        
+        dateFilter = {
+          dueDate: {
+            gte: startDate,
+            lte: endDate
+          }
+        };
+      }
+      
+      const [totalPayments, paidPayments, pendingPayments, overduePayments] = await Promise.all([
+        prisma.payment.aggregate({
+          where: {
+            organizationId,
+            ...dateFilter
+          },
+          _sum: {
+            amount: true
+          },
+          _count: true
+        }),
+        prisma.payment.aggregate({
+          where: {
+            organizationId,
+            status: 'PAID',
+            ...dateFilter
+          },
+          _sum: {
+            amount: true
+          },
+          _count: true
+        }),
+        prisma.payment.aggregate({
+          where: {
+            organizationId,
+            status: 'PENDING',
+            ...dateFilter
+          },
+          _sum: {
+            amount: true
+          },
+          _count: true
+        }),
+        prisma.payment.aggregate({
+          where: {
+            organizationId,
+            status: 'OVERDUE',
+            ...dateFilter
+          },
+          _sum: {
+            amount: true
+          },
+          _count: true
+        })
+      ]);
+      
+      // Get monthly breakdown
+      const monthlyBreakdown = await this.getMonthlyBreakdown(organizationId, period?.year || new Date().getFullYear());
+      
+      return {
+        total: {
+          count: totalPayments._count,
+          amount: totalPayments._sum.amount || 0
+        },
+        paid: {
+          count: paidPayments._count,
+          amount: paidPayments._sum.amount || 0
+        },
+        pending: {
+          count: pendingPayments._count,
+          amount: pendingPayments._sum.amount || 0
+        },
+        overdue: {
+          count: overduePayments._count,
+          amount: overduePayments._sum.amount || 0
+        },
+        collectionRate: totalPayments._sum.amount 
+          ? ((paidPayments._sum.amount || 0) / (totalPayments._sum.amount || 1)) * 100 
+          : 0,
+        monthlyBreakdown
+      };
+    } catch (error) {
+      logger.error('Error getting payment stats:', error);
+      throw error;
+    }
+  }
+  
+  // Get overdue payments
+  async getOverduePayments(organizationId: string): Promise<PaymentWithDetails[]> {
+    const payments = await prisma.payment.findMany({
       where: {
-        id: athleteId,
-        organizationId
+        organizationId,
+        status: 'PENDING',
+        dueDate: {
+          lt: new Date()
+        }
+      },
+      include: {
+        athlete: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            parentEmail: true,
+            parentPhone: true
+          }
+        },
+        paymentType: true
+      },
+      orderBy: {
+        dueDate: 'asc'
       }
     });
-
-    if (!athlete) {
-      throw NotFoundError('Athlete');
-    }
-
-    const payments = await prisma.payment.findMany({
-      where: { athleteId },
-      include: { paymentType: true },
-      orderBy: { createdAt: 'desc' }
+    
+    // Update status to OVERDUE
+    await prisma.payment.updateMany({
+      where: {
+        id: {
+          in: payments.map(p => p.id)
+        }
+      },
+      data: {
+        status: 'OVERDUE'
+      }
     });
-
-    const summary = {
-      totalPaid: 0,
-      totalPending: 0,
-      totalOverdue: 0,
-      paymentHistory: [] as any[]
-    };
-
-    const today = new Date();
-
-    payments.forEach(payment => {
-      if (payment.status === 'PAID') {
-        summary.totalPaid += Number(payment.amount);
-      } else if (payment.status === 'PENDING') {
-        if (payment.dueDate < today) {
-          summary.totalOverdue += Number(payment.amount);
-        } else {
-          summary.totalPending += Number(payment.amount);
+    
+    return payments.map(p => ({ ...p, status: 'OVERDUE' as PaymentStatus }));
+  }
+  
+  // Bulk create recurring payments
+  async createRecurringPayments(organizationId: string, month: number, year: number): Promise<number> {
+    try {
+      // Get all active athletes with recurring payment types
+      const athletes = await prisma.athlete.findMany({
+        where: {
+          organizationId,
+          status: 'ACTIVE'
+        }
+      });
+      
+      // Get recurring payment types
+      const paymentTypes = await prisma.paymentType.findMany({
+        where: {
+          organizationId,
+          isRecurring: true,
+          isActive: true
+        }
+      });
+      
+      let created = 0;
+      const dueDate = new Date(year, month - 1, 10); // 10th of the month
+      
+      for (const athlete of athletes) {
+        for (const paymentType of paymentTypes) {
+          // Check if payment already exists
+          const existing = await prisma.payment.findFirst({
+            where: {
+              organizationId,
+              athleteId: athlete.id,
+              paymentTypeId: paymentType.id,
+              dueDate: {
+                gte: new Date(year, month - 1, 1),
+                lte: new Date(year, month, 0)
+              }
+            }
+          });
+          
+          if (!existing) {
+            await prisma.payment.create({
+              data: {
+                organizationId,
+                athleteId: athlete.id,
+                paymentTypeId: paymentType.id,
+                type: paymentType.recurrenceType || 'MONTHLY',
+                description: `${paymentType.name} - ${month}/${year}`,
+                amount: paymentType.amount,
+                dueDate,
+                status: 'PENDING'
+              }
+            });
+            created++;
+          }
         }
       }
-
-      summary.paymentHistory.push({
-        ...payment,
-        amount: Number(payment.amount)
-      });
-    });
-
-    return summary;
-  }
-
-  async generateInvoice(paymentId: string, organizationId: string) {
-    const payment = await this.findById(paymentId, organizationId);
-
-    if (payment.status !== 'PAID') {
-      throw BadRequestError('Can only generate invoice for paid payments');
+      
+      logger.info(`Created ${created} recurring payments for ${month}/${year}`);
+      
+      if (created > 0) {
+        await this.createPaymentNotification(
+          organizationId,
+          'RECURRING_PAYMENTS',
+          `${created} recurring payments created for ${month}/${year}`,
+          null
+        );
+      }
+      
+      return created;
+    } catch (error) {
+      logger.error('Error creating recurring payments:', error);
+      throw error;
     }
-
-    // TODO: Implement invoice generation
-    // This would typically generate a PDF invoice
-    
-    return {
-      invoiceNumber: `INV-${new Date().getFullYear()}-${payment.id.slice(-6)}`,
-      payment,
-      generatedAt: new Date()
-    };
   }
-
-  async getPaymentTypes() {
-    return prisma.paymentType.findMany({
-      orderBy: [
-        { type: 'asc' },
-        { name: 'asc' }
-      ]
-    });
+  
+  // Helper functions
+  private async getMonthlyBreakdown(organizationId: string, year: number): Promise<any[]> {
+    const breakdown = [];
+    
+    for (let month = 0; month < 12; month++) {
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0);
+      
+      const monthData = await prisma.payment.aggregate({
+        where: {
+          organizationId,
+          dueDate: {
+            gte: startDate,
+            lte: endDate
+          }
+        },
+        _sum: {
+          amount: true
+        }
+      });
+      
+      const paidData = await prisma.payment.aggregate({
+        where: {
+          organizationId,
+          status: 'PAID',
+          dueDate: {
+            gte: startDate,
+            lte: endDate
+          }
+        },
+        _sum: {
+          amount: true
+        }
+      });
+      
+      breakdown.push({
+        month: month + 1,
+        monthName: new Date(year, month).toLocaleString('en', { month: 'short' }),
+        total: monthData._sum.amount || 0,
+        paid: paidData._sum.amount || 0
+      });
+    }
+    
+    return breakdown;
+  }
+  
+  private async createPaymentNotification(
+    organizationId: string,
+    type: string,
+    message: string,
+    paymentId: string | null
+  ): Promise<void> {
+    try {
+      await prisma.notification.create({
+        data: {
+          organizationId,
+          type,
+          title: 'Payment Update',
+          message,
+          priority: type === 'PAYMENT_RECEIVED' ? 'low' : 'medium',
+          isRead: false,
+          metadata: paymentId ? { paymentId } : {}
+        }
+      });
+    } catch (error) {
+      logger.error('Error creating payment notification:', error);
+    }
   }
 }
 

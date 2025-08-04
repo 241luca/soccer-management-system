@@ -3,48 +3,42 @@ class ApiClient {
   constructor() {
     this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
     this.token = localStorage.getItem('token');
-    this.organizationId = JSON.parse(localStorage.getItem('organization') || '{}')?.id;
   }
 
   async request(endpoint, options = {}) {
+    // Get organization ID from localStorage
+    const user = localStorage.getItem('user');
+    let organizationId = null;
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        organizationId = userData.organizationId;
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    
     const config = {
       ...options,
       headers: {
         'Content-Type': 'application/json',
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...(this.organizationId && { 'X-Organization-ID': this.organizationId }),
+        ...(organizationId && { 'X-Organization-ID': organizationId }),
         ...options.headers
       }
     };
 
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
-      
-      // Handle 401 separately
-      if (response.status === 401) {
-        // Token expired or invalid
-        console.warn('401 Unauthorized - Token may be expired');
-        
-        // Only redirect to login if we're not already there
-        if (!window.location.pathname.includes('/login')) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('organization');
-          window.location.href = '/';
-        }
-        
-        throw new Error('Unauthorized');
-      }
-
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error?.message || `API Error: ${response.status}`);
+        throw new Error(data.error?.message || data.message || `API Error: ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      console.error('API Request failed:', error);
+      console.error('API Request failed:', endpoint, error);
       throw error;
     }
   }
@@ -58,39 +52,33 @@ class ApiClient {
     }
   }
 
-  setOrganization(organization) {
-    this.organizationId = organization?.id;
-    if (organization) {
-      localStorage.setItem('organization', JSON.stringify(organization));
-    } else {
-      localStorage.removeItem('organization');
-    }
-  }
-
   // Auth methods
   async login(email, password, organizationId = null) {
-    // Check if it's a super admin login (by email pattern)
-    const isSuperAdmin = email.includes('superadmin');
-    const endpoint = isSuperAdmin ? '/auth/super-admin/login' : '/auth/login';
+    const body = { email, password };
+    if (organizationId) {
+      body.organizationId = organizationId;
+    }
     
-    const data = await this.request(endpoint, {
+    const data = await this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password, ...(organizationId && { organizationId }) })
+      body: JSON.stringify(body)
     });
     
-    // Handle multi-org selection
-    if (data.requiresOrganizationSelection) {
-      return data;
-    }
-    
-    // Set tokens with new format
-    this.setToken(data.accessToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    if (data.refreshToken) {
-      localStorage.setItem('refreshToken', data.refreshToken);
-    }
-    if (data.organization) {
-      this.setOrganization(data.organization);
+    // Handle the response - it may have different formats
+    const token = data.accessToken || data.token;
+    if (token) {
+      this.setToken(token);
+      // Store user data with organization info
+      const userData = {
+        ...data.user,
+        organizationId: data.organization?.id || data.user?.organizationId
+      };
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      // Store organization separately if provided
+      if (data.organization) {
+        localStorage.setItem('organization', JSON.stringify(data.organization));
+      }
     }
     
     return data;
@@ -103,23 +91,17 @@ class ApiClient {
       // Ignore logout errors
     }
     this.setToken(null);
-    this.setOrganization(null);
     localStorage.removeItem('user');
-    localStorage.removeItem('refreshToken');
   }
 
-  async getMe() {
-    return this.request('/auth/me');
+  // Dashboard
+  async getDashboardStats() {
+    return this.request('/dashboard/stats');
   }
 
-  // Athletes methods
-  async getAthletes(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/athletes${query ? `?${query}` : ''}`);
-  }
-
-  async getAthlete(id) {
-    return this.request(`/athletes/${id}`);
+  // Athletes
+  async getAthletes() {
+    return this.request('/athletes');
   }
 
   async createAthlete(data) {
@@ -142,57 +124,9 @@ class ApiClient {
     });
   }
 
-  async getAthleteStatistics(id) {
-    return this.request(`/athletes/${id}/statistics`);
-  }
-
-  // Dashboard methods
-  async getDashboardStats() {
-    return this.request('/dashboard/stats');
-  }
-
-  async getDashboardActivity() {
-    return this.request('/dashboard/activity');
-  }
-
-  // Notifications methods
-  async getNotifications(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/notifications${query ? `?${query}` : ''}`);
-  }
-
-  async markNotificationAsRead(id) {
-    return this.request(`/notifications/${id}/read`, {
-      method: 'PUT'
-    });
-  }
-
-  async markAllNotificationsAsRead() {
-    return this.request('/notifications/read-all', {
-      method: 'PUT'
-    });
-  }
-
-  async deleteNotification(id) {
-    return this.request(`/notifications/${id}`, {
-      method: 'DELETE'
-    });
-  }
-
-  async clearAllNotifications() {
-    return this.request('/notifications', {
-      method: 'DELETE'
-    });
-  }
-
-  // Teams methods
-  async getTeams(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/teams${query ? `?${query}` : ''}`);
-  }
-
-  async getTeam(id) {
-    return this.request(`/teams/${id}`);
+  // Teams
+  async getTeams() {
+    return this.request('/teams');
   }
 
   async createTeam(data) {
@@ -215,18 +149,9 @@ class ApiClient {
     });
   }
 
-  async getTeamStatistics(id) {
-    return this.request(`/teams/${id}/statistics`);
-  }
-
-  // Documents methods
-  async getDocuments(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/documents${query ? `?${query}` : ''}`);
-  }
-
-  async getDocument(id) {
-    return this.request(`/documents/${id}`);
+  // Documents
+  async getDocuments() {
+    return this.request('/documents');
   }
 
   async createDocument(data) {
@@ -234,26 +159,6 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(data)
     });
-  }
-
-  async uploadDocument(formData) {
-    const config = {
-      method: 'POST',
-      body: formData,
-      headers: {
-        ...(this.token && { Authorization: `Bearer ${this.token}` })
-        // Don't set Content-Type, let browser set it with boundary for multipart
-      }
-    };
-
-    const response = await fetch(`${this.baseURL}/documents/upload`, config);
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Upload failed');
-    }
-
-    return response.json();
   }
 
   async updateDocument(id, data) {
@@ -269,18 +174,9 @@ class ApiClient {
     });
   }
 
-  async checkExpiringDocuments(daysAhead = 30) {
-    return this.request(`/documents/check-expiring?days=${daysAhead}`);
-  }
-
-  // Payments methods
-  async getPayments(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/payments${query ? `?${query}` : ''}`);
-  }
-
-  async getPayment(id) {
-    return this.request(`/payments/${id}`);
+  // Payments
+  async getPayments() {
+    return this.request('/payments');
   }
 
   async createPayment(data) {
@@ -297,57 +193,79 @@ class ApiClient {
     });
   }
 
-  async recordPayment(id, data) {
-    return this.request(`/payments/${id}/record`, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  }
-
-  async cancelPayment(id, reason) {
-    return this.request(`/payments/${id}/cancel`, {
-      method: 'POST',
-      body: JSON.stringify({ reason })
-    });
-  }
-
   async deletePayment(id) {
     return this.request(`/payments/${id}`, {
       method: 'DELETE'
     });
   }
 
-  async getPaymentSummary(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/payments/summary${query ? `?${query}` : ''}`);
+  // Matches
+  async getMatches() {
+    return this.request('/matches');
   }
 
-  async checkOverduePayments() {
-    return this.request('/payments/check-overdue', {
-      method: 'POST'
-    });
-  }
-
-  // Configuration methods
-  async getPaymentTypes() {
-    return this.request('/config/payment-types');
-  }
-
-  async getDocumentTypes() {
-    return this.request('/config/document-types');
-  }
-
-  async getPositions() {
-    return this.request('/config/positions');
-  }
-
-  // User methods
-  async changePassword(data) {
-    return this.request('/auth/change-password', {
+  async createMatch(data) {
+    return this.request('/matches', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   }
+
+  async updateMatch(id, data) {
+    return this.request(`/matches/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteMatch(id) {
+    return this.request(`/matches/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Transport
+  async getTransportZones() {
+    return this.request('/transport/zones');
+  }
+
+  async getBuses() {
+    return this.request('/transport/buses');
+  }
+
+  async createBus(data) {
+    return this.request('/transport/buses', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async updateBus(id, data) {
+    return this.request(`/transport/buses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteBus(id) {
+    return this.request(`/transport/buses/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Organizations (for multi-tenant)
+  async getOrganizations() {
+    return this.request('/organizations');
+  }
+
+  async switchOrganization(organizationId) {
+    return this.request('/auth/switch-organization', {
+      method: 'POST',
+      body: JSON.stringify({ organizationId })
+    });
+  }
+
+  // Add other methods as needed
 }
 
 export const api = new ApiClient();

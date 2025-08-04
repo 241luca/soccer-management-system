@@ -9,8 +9,8 @@ router.use(authenticate);
 router.get('/', async (req: AuthRequest, res, next) => {
   try {
     const result = await notificationService.findAll(
-      req.user!.organizationId,
-      req.user!.userId,
+      req.user?.organizationId || '',
+      req.user?.id || req.user?.userId || "",
       {
         unread: req.query.unread === 'true',
         type: req.query.type as string,
@@ -27,7 +27,7 @@ router.get('/', async (req: AuthRequest, res, next) => {
 // Mark as read
 router.put('/:id/read', async (req: AuthRequest, res, next) => {
   try {
-    const notification = await notificationService.markAsRead(req.params.id, req.user!.userId);
+    const notification = await notificationService.markAsRead(req.params.id, req.user?.id || req.user?.userId || "");
     res.json(notification);
   } catch (error) {
     next(error);
@@ -38,8 +38,8 @@ router.put('/:id/read', async (req: AuthRequest, res, next) => {
 router.put('/read-all', async (req: AuthRequest, res, next) => {
   try {
     const result = await notificationService.markAllAsRead(
-      req.user!.organizationId,
-      req.user!.userId
+      req.user?.organizationId || '',
+      req.user?.id || req.user?.userId || ""
     );
     res.json(result);
   } catch (error) {
@@ -50,7 +50,7 @@ router.put('/read-all', async (req: AuthRequest, res, next) => {
 // Delete notification
 router.delete('/:id', async (req: AuthRequest, res, next) => {
   try {
-    const result = await notificationService.delete(req.params.id, req.user!.userId);
+    const result = await notificationService.delete(req.params.id, req.user?.id || req.user?.userId || "");
     res.json(result);
   } catch (error) {
     next(error);
@@ -61,8 +61,8 @@ router.delete('/:id', async (req: AuthRequest, res, next) => {
 router.delete('/', async (req: AuthRequest, res, next) => {
   try {
     const result = await notificationService.clearAll(
-      req.user!.organizationId,
-      req.user!.userId
+      req.user?.organizationId || '',
+      req.user?.id || req.user?.userId || ""
     );
     res.json(result);
   } catch (error) {

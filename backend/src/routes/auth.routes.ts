@@ -74,7 +74,7 @@ router.post('/register', async (req, res, next) => {
 // Get user organizations
 router.get('/organizations', authenticate, async (req: AuthRequest, res, next) => {
   try {
-    const organizations = await authService.getUserOrganizations(req.user!.userId);
+    const organizations = await authService.getUserOrganizations(req.user?.id || req.user?.userId || "");
     return res.json({ organizations });
   } catch (error) {
     return next(error);
@@ -86,7 +86,7 @@ router.post('/switch-organization', authenticate, async (req: AuthRequest, res, 
   try {
     const data = switchOrganizationSchema.parse(req.body);
     const result = await authService.switchOrganization({
-      userId: req.user!.userId,
+      userId: req.user?.id || req.user?.userId || "",
       organizationId: data.organizationId
     });
     return res.json(result);
@@ -128,7 +128,7 @@ router.post('/super-admin/login', async (req, res, next) => {
 // Get current user with organization context
 router.get('/me', extractOrganization, authenticate, async (req: AuthRequest, res, next) => {
   try {
-    const user = await authService.validateUser(req.user!.userId);
+    const user = await authService.validateUser(req.user?.id || req.user?.userId || "");
     
     if (!user) {
       return res.status(404).json({

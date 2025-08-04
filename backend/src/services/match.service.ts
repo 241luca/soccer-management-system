@@ -1,115 +1,179 @@
-import { PrismaClient, Match, Prisma, MatchStatus } from '@prisma/client';
-import { NotFoundError, ConflictError, BadRequestError } from '../middleware/error.middleware';
+import { PrismaClient, Match, MatchStatus } from '@prisma/client';
+import { BadRequestError, NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { notificationService } from './notification.service';
 
 const prisma = new PrismaClient();
 
 export interface CreateMatchInput {
+  organizationId: string;
   homeTeamId: string;
-  awayTeamId: string;
-  matchDate: Date;
-  matchTime: Date;
-  competitionId?: number;
-  venueId?: number;
+  awayTeamId?: string;
+  awayTeamName?: string;
+  competitionId?: string;
+  date: Date;
+  time?: string;
+  venueId?: string;
+  venue?: string;
+  type: 'FRIENDLY' | 'LEAGUE' | 'CUP' | 'TOURNAMENT';
+  season: string;
   notes?: string;
 }
 
 export interface UpdateMatchInput extends Partial<CreateMatchInput> {
+  id: string;
   status?: MatchStatus;
   homeScore?: number;
   awayScore?: number;
 }
 
-export interface CreateRosterInput {
-  athleteId: string;
-  isStarter: boolean;
-  status?: 'selected' | 'injured' | 'absent';
-  notes?: string;
+export interface MatchRosterInput {
+  matchId: string;
+  organizationId: string;
+  roster: {
+    athleteId: string;
+    position?: string;
+    jerseyNumber?: number;
+    isStarter: boolean;
+  }[];
 }
 
-export interface CreateMatchStatInput {
-  athleteId: string;
-  minutesPlayed?: number;
-  goals?: number;
-  assists?: number;
-  yellowCards?: number;
-  redCards?: number;
-  saves?: number;
+export interface MatchWithDetails extends Match {
+  homeTeam?: any;
+  awayTeam?: any;
+  competition?: any;
+  venue?: any;
+  roster?: any[];
+  stats?: any;
 }
 
 export class MatchService {
-  async findAll(organizationId: string, params?: {
-    teamId?: string;
-    competitionId?: number;
-    status?: MatchStatus;
-    fromDate?: Date;
-    toDate?: Date;
-    limit?: number;
-    offset?: number;
-  }) {
-    const where: Prisma.MatchWhereInput = {
-      organizationId,
-      ...(params?.teamId && {
-        OR: [
-          { homeTeamId: params.teamId },
-          { awayTeamId: params.teamId }
-        ]
-      }),
-      ...(params?.competitionId && { competitionId: params.competitionId }),
-      ...(params?.status && { status: params.status }),
-      ...(params?.fromDate && { matchDate: { gte: params.fromDate } }),
-      ...(params?.toDate && { matchDate: { lte: params.toDate } })
-    };
-
-    const [matches, total] = await Promise.all([
-      prisma.match.findMany({
+  // Get all matches
+  async getMatches(organizationId: string, filters?: any): Promise<MatchWithDetails[]> {
+    try {
+      const where: any = { organizationId };
+      
+      if (filters?.teamId) {
+        where.OR = [
+          { homeTeamId: filters.teamId },
+          { awayTeamId: filters.teamId }
+        ];
+      }
+      
+      if (filters?.status) {
+        where.status = filters.status;
+      }
+      
+      if (filters?.type) {
+        where.type = filters.type;
+      }
+      
+      if (filters?.upcoming === 'true') {
+        where.date = {
+          gte: new Date()
+        };
+        where.status = {
+          in: ['SCHEDULED', 'POSTPONED']
+        };
+      }
+      
+      if (filters?.month && filters?.year) {
+        const startDate = new Date(filters.year, filters.month - 1, 1);
+        const endDate = new Date(filters.year, filters.month, 0);
+        
+        where.date = {
+          gte: startDate,
+          lte: endDate
+        };
+      }
+      
+      const matches = await prisma.match.findMany({
         where,
         include: {
           homeTeam: {
-            select: { id: true, name: true, category: true }
+            select: {
+              id: true,
+              name: true,
+              category: true
+            }
           },
           awayTeam: {
-            select: { id: true, name: true, category: true }
+            select: {
+              id: true,
+              name: true,
+              category: true
+            }
           },
           competition: {
-            select: { id: true, name: true }
+            select: {
+              id: true,
+              name: true,
+              type: true
+            }
           },
           venue: {
-            select: { id: true, name: true, city: true }
+            select: {
+              id: true,
+              name: true,
+              address: true
+            }
           },
-          _count: {
-            select: { rosters: true }
+          matchAthletes: {
+            include: {
+              athlete: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true
+                }
+              }
+            }
           }
         },
         orderBy: [
-          { matchDate: 'desc' },
-          { matchTime: 'desc' }
-        ],
-        take: params?.limit,
-        skip: params?.offset
-      }),
-      prisma.match.count({ where })
-    ]);
-
-    return {
-      data: matches.map(match => ({
-        ...match,
-        rosterCount: match._count.rosters,
-        isPlayed: match.status === 'COMPLETED',
-        result: match.status === 'COMPLETED' 
-          ? `${match.homeScore} - ${match.awayScore}` 
-          : null
-      })),
-      total,
-      limit: params?.limit || matches.length,
-      offset: params?.offset || 0
-    };
+          { date: 'desc' },
+          { time: 'desc' }
+        ]
+      });
+      
+      // Update match statuses based on date
+      const updatedMatches = await Promise.all(
+        matches.map(async (match) => {
+          const newStatus = this.calculateMatchStatus(match);
+          if (newStatus !== match.status && match.status === 'SCHEDULED') {
+            return await prisma.match.update({
+              where: { id: match.id },
+              data: { status: newStatus },
+              include: {
+                homeTeam: true,
+                awayTeam: true,
+                competition: true,
+                venue: true,
+                matchAthletes: {
+                  include: {
+                    athlete: true
+                  }
+                }
+              }
+            });
+          }
+          return match;
+        })
+      );
+      
+      return updatedMatches;
+    } catch (error) {
+      logger.error('Error fetching matches:', error);
+      throw error;
+    }
   }
-
-  async findById(id: string, organizationId: string) {
+  
+  // Get single match
+  async getMatchById(id: string, organizationId: string): Promise<MatchWithDetails> {
     const match = await prisma.match.findFirst({
-      where: { id, organizationId },
+      where: {
+        id,
+        organizationId
+      },
       include: {
         homeTeam: {
           include: {
@@ -119,437 +183,534 @@ export class MatchService {
                 id: true,
                 firstName: true,
                 lastName: true,
-                jerseyNumber: true,
-                position: true
+                photoUrl: true
               }
             }
           }
         },
-        awayTeam: {
+        awayTeam: true,
+        competition: true,
+        venue: true,
+        matchAthletes: {
           include: {
-            athletes: {
-              where: { status: 'ACTIVE' },
+            athlete: {
               select: {
                 id: true,
                 firstName: true,
                 lastName: true,
-                jerseyNumber: true,
-                position: true
+                photoUrl: true,
+                birthDate: true
               }
-            }
-          }
-        },
-        competition: true,
-        venue: true,
-        rosters: {
-          include: {
-            athlete: {
-              include: { position: true }
             }
           },
           orderBy: [
             { isStarter: 'desc' },
-            { athlete: { jerseyNumber: 'asc' } }
+            { jerseyNumber: 'asc' }
           ]
         },
-        stats: {
-          include: {
-            athlete: true
+        matchEvents: {
+          orderBy: {
+            minute: 'asc'
           }
         }
       }
     });
-
+    
     if (!match) {
-      throw NotFoundError('Match');
+      throw new NotFoundError('Match not found');
     }
-
-    // Calculate team statistics for the match
-    const homeTeamStats = this.calculateTeamStats(match.stats.filter(s => 
-      match.rosters.find(r => r.athleteId === s.athleteId && 
-        match.homeTeam.athletes.some(a => a.id === s.athleteId))
-    ));
-
-    const awayTeamStats = this.calculateTeamStats(match.stats.filter(s => 
-      match.rosters.find(r => r.athleteId === s.athleteId && 
-        match.awayTeam.athletes.some(a => a.id === s.athleteId))
-    ));
-
-    return {
-      ...match,
-      homeTeamStats,
-      awayTeamStats
-    };
-  }
-
-  async create(data: CreateMatchInput, organizationId: string) {
-    // Validate teams exist and belong to organization
-    const [homeTeam, awayTeam] = await Promise.all([
-      prisma.team.findFirst({ where: { id: data.homeTeamId, organizationId } }),
-      prisma.team.findFirst({ where: { id: data.awayTeamId, organizationId } })
-    ]);
-
-    if (!homeTeam) throw BadRequestError('Invalid home team');
-    if (!awayTeam) throw BadRequestError('Invalid away team');
-
-    // Check for conflicting matches (same teams on same date)
-    const conflictingMatch = await prisma.match.findFirst({
-      where: {
-        matchDate: data.matchDate,
-        OR: [
-          {
-            AND: [
-              { homeTeamId: data.homeTeamId },
-              { awayTeamId: data.awayTeamId }
-            ]
-          },
-          {
-            AND: [
-              { homeTeamId: data.homeTeamId },
-              { status: { notIn: ['CANCELLED', 'POSTPONED'] } }
-            ]
-          },
-          {
-            AND: [
-              { awayTeamId: data.awayTeamId },
-              { status: { notIn: ['CANCELLED', 'POSTPONED'] } }
-            ]
-          }
-        ]
-      }
-    });
-
-    if (conflictingMatch) {
-      throw ConflictError('One or both teams already have a match scheduled on this date');
-    }
-
-    const match = await prisma.match.create({
-      data: {
-        ...data,
-        organizationId,
-        status: 'SCHEDULED'
-      },
-      include: {
-        homeTeam: true,
-        awayTeam: true,
-        venue: true
-      }
-    });
-
-    logger.info(`New match created: ${homeTeam.name} vs ${awayTeam.name} on ${data.matchDate}`);
-
-    // Create notifications for both teams
-    await Promise.all([
-      notificationService.create({
-        organizationId,
-        type: 'match_scheduled',
-        severity: 'info',
-        title: 'Nuova Partita Programmata',
-        message: `${homeTeam.name} vs ${awayTeam.name} - ${new Date(data.matchDate).toLocaleDateString('it-IT')}`,
-        relatedEntityType: 'match',
-        relatedEntityId: match.id
-      })
-    ]);
-
+    
     return match;
   }
-
-  async update(id: string, data: UpdateMatchInput, organizationId: string) {
-    const match = await this.findById(id, organizationId);
-
-    // Validate status transitions
-    if (data.status) {
-      this.validateStatusTransition(match.status, data.status);
-
-      // If completing match, require scores
-      if (data.status === 'COMPLETED' && (data.homeScore === undefined || data.awayScore === undefined)) {
-        throw BadRequestError('Scores are required when completing a match');
-      }
-    }
-
-    // Check for conflicting matches if date is changing
-    if (data.matchDate && data.matchDate !== match.matchDate) {
-      const conflictingMatch = await prisma.match.findFirst({
+  
+  // Create new match
+  async createMatch(data: CreateMatchInput): Promise<Match> {
+    try {
+      // Verify home team exists
+      const homeTeam = await prisma.team.findFirst({
         where: {
-          id: { not: id },
-          matchDate: data.matchDate,
-          OR: [
-            { homeTeamId: match.homeTeamId },
-            { awayTeamId: match.awayTeamId }
-          ],
-          status: { notIn: ['CANCELLED', 'POSTPONED'] }
+          id: data.homeTeamId,
+          organizationId: data.organizationId
         }
       });
-
-      if (conflictingMatch) {
-        throw ConflictError('One or both teams already have a match scheduled on this date');
-      }
-    }
-
-    const updated = await prisma.match.update({
-      where: { id },
-      data,
-      include: {
-        homeTeam: true,
-        awayTeam: true,
-        venue: true
-      }
-    });
-
-    // Send notifications based on status change
-    if (data.status && data.status !== match.status) {
-      await this.sendStatusChangeNotification(updated, match.status);
-    }
-
-    logger.info(`Match updated: ${updated.homeTeam.name} vs ${updated.awayTeam.name}`);
-
-    return updated;
-  }
-
-  async delete(id: string, organizationId: string) {
-    const match = await this.findById(id, organizationId);
-
-    if (match.status === 'COMPLETED') {
-      throw BadRequestError('Cannot delete completed matches');
-    }
-
-    await prisma.match.delete({ where: { id } });
-
-    logger.info(`Match deleted: ${match.homeTeam.name} vs ${match.awayTeam.name}`);
-
-    return { message: 'Match deleted successfully' };
-  }
-
-  // Roster Management
-  async updateRoster(matchId: string, roster: CreateRosterInput[], organizationId: string) {
-    const match = await this.findById(matchId, organizationId);
-
-    if (match.status !== 'SCHEDULED') {
-      throw BadRequestError('Can only update roster for scheduled matches');
-    }
-
-    // Validate all athletes belong to one of the teams
-    const athleteIds = roster.map(r => r.athleteId);
-    const validAthletes = await prisma.athlete.findMany({
-      where: {
-        id: { in: athleteIds },
-        teamId: { in: [match.homeTeamId, match.awayTeamId] },
-        status: 'ACTIVE'
-      }
-    });
-
-    if (validAthletes.length !== athleteIds.length) {
-      throw BadRequestError('Some athletes are not valid for this match');
-    }
-
-    // Delete existing roster and create new one
-    await prisma.$transaction(async (tx) => {
-      await tx.matchRoster.deleteMany({ where: { matchId } });
       
-      await tx.matchRoster.createMany({
-        data: roster.map(r => ({
-          matchId,
-          ...r
+      if (!homeTeam) {
+        throw new NotFoundError('Home team not found');
+      }
+      
+      // Verify away team if internal match
+      if (data.awayTeamId) {
+        const awayTeam = await prisma.team.findFirst({
+          where: {
+            id: data.awayTeamId,
+            organizationId: data.organizationId
+          }
+        });
+        
+        if (!awayTeam) {
+          throw new NotFoundError('Away team not found');
+        }
+        
+        if (data.homeTeamId === data.awayTeamId) {
+          throw new BadRequestError('Home and away team cannot be the same');
+        }
+      }
+      
+      // Check for scheduling conflicts
+      const conflictingMatch = await prisma.match.findFirst({
+        where: {
+          date: data.date,
+          time: data.time,
+          OR: [
+            { homeTeamId: data.homeTeamId },
+            { awayTeamId: data.homeTeamId },
+            { homeTeamId: data.awayTeamId },
+            { awayTeamId: data.awayTeamId }
+          ]
+        }
+      });
+      
+      if (conflictingMatch) {
+        throw new ConflictError('A match is already scheduled for one of these teams at this time');
+      }
+      
+      const match = await prisma.match.create({
+        data: {
+          organizationId: data.organizationId,
+          homeTeamId: data.homeTeamId,
+          awayTeamId: data.awayTeamId,
+          awayTeamName: data.awayTeamName || null,
+          competitionId: data.competitionId,
+          date: data.date,
+          time: data.time,
+          venueId: data.venueId,
+          venue: data.venue,
+          type: data.type,
+          season: data.season,
+          status: 'SCHEDULED',
+          notes: data.notes
+        }
+      });
+      
+      logger.info(`Match created: ${match.id}`);
+      
+      // Create notification
+      await this.createMatchNotification(
+        data.organizationId,
+        'NEW_MATCH',
+        `New match scheduled: ${homeTeam.name} vs ${data.awayTeamName || 'TBD'} on ${new Date(data.date).toLocaleDateString()}`,
+        match.id
+      );
+      
+      return match;
+    } catch (error) {
+      logger.error('Error creating match:', error);
+      throw error;
+    }
+  }
+  
+  // Update match
+  async updateMatch(data: UpdateMatchInput): Promise<Match> {
+    try {
+      const existing = await prisma.match.findFirst({
+        where: {
+          id: data.id,
+          organizationId: data.organizationId
+        }
+      });
+      
+      if (!existing) {
+        throw new NotFoundError('Match not found');
+      }
+      
+      // Don't allow changing teams for completed matches
+      if (existing.status === 'COMPLETED' && (data.homeTeamId || data.awayTeamId)) {
+        throw new BadRequestError('Cannot change teams for completed match');
+      }
+      
+      const match = await prisma.match.update({
+        where: { id: data.id },
+        data: {
+          homeTeamId: data.homeTeamId,
+          awayTeamId: data.awayTeamId,
+          awayTeamName: data.awayTeamName,
+          competitionId: data.competitionId,
+          date: data.date,
+          time: data.time,
+          venueId: data.venueId,
+          venue: data.venue,
+          type: data.type,
+          season: data.season,
+          status: data.status,
+          homeScore: data.homeScore,
+          awayScore: data.awayScore,
+          notes: data.notes,
+          updatedAt: new Date()
+        }
+      });
+      
+      logger.info(`Match updated: ${match.id}`);
+      
+      // Create notification if match was postponed or cancelled
+      if (data.status && ['POSTPONED', 'CANCELLED'].includes(data.status)) {
+        await this.createMatchNotification(
+          data.organizationId!,
+          'MATCH_UPDATE',
+          `Match ${data.status.toLowerCase()}: Check match details for updates`,
+          match.id
+        );
+      }
+      
+      return match;
+    } catch (error) {
+      logger.error('Error updating match:', error);
+      throw error;
+    }
+  }
+  
+  // Delete match
+  async deleteMatch(id: string, organizationId: string): Promise<void> {
+    try {
+      const match = await prisma.match.findFirst({
+        where: {
+          id,
+          organizationId
+        }
+      });
+      
+      if (!match) {
+        throw new NotFoundError('Match not found');
+      }
+      
+      if (match.status === 'COMPLETED') {
+        throw new BadRequestError('Cannot delete completed match');
+      }
+      
+      // Delete related data
+      await prisma.matchAthlete.deleteMany({
+        where: { matchId: id }
+      });
+      
+      await prisma.matchEvent.deleteMany({
+        where: { matchId: id }
+      });
+      
+      await prisma.match.delete({
+        where: { id }
+      });
+      
+      logger.info(`Match deleted: ${id}`);
+    } catch (error) {
+      logger.error('Error deleting match:', error);
+      throw error;
+    }
+  }
+  
+  // Update match roster
+  async updateMatchRoster(data: MatchRosterInput): Promise<void> {
+    try {
+      const match = await prisma.match.findFirst({
+        where: {
+          id: data.matchId,
+          organizationId: data.organizationId
+        },
+        include: {
+          homeTeam: true
+        }
+      });
+      
+      if (!match) {
+        throw new NotFoundError('Match not found');
+      }
+      
+      if (match.status === 'COMPLETED') {
+        throw new BadRequestError('Cannot update roster for completed match');
+      }
+      
+      // Verify all athletes belong to the team
+      const athleteIds = data.roster.map(r => r.athleteId);
+      const athletes = await prisma.athlete.findMany({
+        where: {
+          id: { in: athleteIds },
+          teamId: match.homeTeamId,
+          status: 'ACTIVE'
+        }
+      });
+      
+      if (athletes.length !== athleteIds.length) {
+        throw new BadRequestError('Some athletes are not eligible for this team');
+      }
+      
+      // Delete existing roster
+      await prisma.matchAthlete.deleteMany({
+        where: { matchId: data.matchId }
+      });
+      
+      // Create new roster
+      await prisma.matchAthlete.createMany({
+        data: data.roster.map(r => ({
+          matchId: data.matchId,
+          athleteId: r.athleteId,
+          position: r.position,
+          jerseyNumber: r.jerseyNumber,
+          isStarter: r.isStarter,
+          isCaptain: false
         }))
       });
-    });
-
-    // Send notification to selected athletes
-    const selectedAthletes = roster.filter(r => r.status === 'selected');
-    await notificationService.create({
-      organizationId,
-      type: 'match_roster',
-      severity: 'info',
-      title: 'Convocazione Partita',
-      message: `Sei stato convocato per ${match.homeTeam.name} vs ${match.awayTeam.name}`,
-      relatedEntityType: 'match',
-      relatedEntityId: matchId
-    });
-
-    return { message: 'Roster updated successfully', count: roster.length };
+      
+      logger.info(`Match roster updated: ${data.matchId} with ${data.roster.length} players`);
+      
+      // Create notification
+      await this.createMatchNotification(
+        data.organizationId,
+        'ROSTER_UPDATE',
+        `Match roster updated for ${match.homeTeam.name}`,
+        match.id
+      );
+    } catch (error) {
+      logger.error('Error updating match roster:', error);
+      throw error;
+    }
   }
-
-  async getRoster(matchId: string, organizationId: string) {
-    await this.findById(matchId, organizationId); // Verify access
-
-    const roster = await prisma.matchRoster.findMany({
-      where: { matchId },
+  
+  // Record match result
+  async recordMatchResult(
+    matchId: string,
+    organizationId: string,
+    homeScore: number,
+    awayScore: number,
+    events?: any[]
+  ): Promise<Match> {
+    try {
+      const match = await prisma.match.findFirst({
+        where: {
+          id: matchId,
+          organizationId
+        },
+        include: {
+          homeTeam: true,
+          awayTeam: true
+        }
+      });
+      
+      if (!match) {
+        throw new NotFoundError('Match not found');
+      }
+      
+      if (match.status === 'COMPLETED') {
+        throw new BadRequestError('Match result already recorded');
+      }
+      
+      // Update match
+      const updatedMatch = await prisma.match.update({
+        where: { id: matchId },
+        data: {
+          status: 'COMPLETED',
+          homeScore,
+          awayScore,
+          updatedAt: new Date()
+        }
+      });
+      
+      // Record match events if provided
+      if (events && events.length > 0) {
+        await prisma.matchEvent.createMany({
+          data: events.map(event => ({
+            matchId,
+            athleteId: event.athleteId,
+            type: event.type,
+            minute: event.minute,
+            description: event.description
+          }))
+        });
+      }
+      
+      logger.info(`Match result recorded: ${matchId} (${homeScore}-${awayScore})`);
+      
+      // Create notification
+      const resultText = `${match.homeTeam.name} ${homeScore} - ${awayScore} ${match.awayTeam?.name || match.awayTeamName}`;
+      await this.createMatchNotification(
+        organizationId,
+        'MATCH_RESULT',
+        `Match completed: ${resultText}`,
+        matchId
+      );
+      
+      return updatedMatch;
+    } catch (error) {
+      logger.error('Error recording match result:', error);
+      throw error;
+    }
+  }
+  
+  // Get match calendar
+  async getMatchCalendar(organizationId: string, month: number, year: number): Promise<any> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    
+    const matches = await prisma.match.findMany({
+      where: {
+        organizationId,
+        date: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
       include: {
-        athlete: {
-          include: {
-            position: true,
-            team: true
+        homeTeam: {
+          select: {
+            id: true,
+            name: true,
+            category: true
+          }
+        },
+        awayTeam: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        venue: {
+          select: {
+            name: true,
+            address: true
           }
         }
       },
       orderBy: [
-        { isStarter: 'desc' },
-        { athlete: { jerseyNumber: 'asc' } }
+        { date: 'asc' },
+        { time: 'asc' }
       ]
     });
-
-    // Group by team
-    const homeRoster = roster.filter(r => r.athlete.teamId === roster[0]?.athlete.team?.id);
-    const awayRoster = roster.filter(r => r.athlete.teamId !== roster[0]?.athlete.team?.id);
-
+    
+    // Group matches by date
+    const calendar: { [key: string]: any[] } = {};
+    
+    matches.forEach(match => {
+      const dateKey = new Date(match.date).toISOString().split('T')[0];
+      if (!calendar[dateKey]) {
+        calendar[dateKey] = [];
+      }
+      calendar[dateKey].push(match);
+    });
+    
     return {
-      home: homeRoster,
-      away: awayRoster,
-      total: roster.length
+      month,
+      year,
+      matches: calendar,
+      totalMatches: matches.length,
+      upcomingMatches: matches.filter(m => m.status === 'SCHEDULED').length,
+      completedMatches: matches.filter(m => m.status === 'COMPLETED').length
     };
   }
-
-  // Match Statistics
-  async updateStats(matchId: string, stats: CreateMatchStatInput[], organizationId: string) {
-    const match = await this.findById(matchId, organizationId);
-
-    if (match.status !== 'IN_PROGRESS' && match.status !== 'COMPLETED') {
-      throw BadRequestError('Can only update stats for matches in progress or completed');
-    }
-
-    // Validate all athletes are in the roster
-    const athleteIds = stats.map(s => s.athleteId);
-    const rosterAthletes = await prisma.matchRoster.findMany({
+  
+  // Get team fixtures
+  async getTeamFixtures(teamId: string, organizationId: string): Promise<MatchWithDetails[]> {
+    const matches = await prisma.match.findMany({
       where: {
-        matchId,
-        athleteId: { in: athleteIds }
-      }
-    });
-
-    if (rosterAthletes.length !== athleteIds.length) {
-      throw BadRequestError('Some athletes are not in the match roster');
-    }
-
-    // Update or create stats
-    await prisma.$transaction(async (tx) => {
-      for (const stat of stats) {
-        await tx.matchStat.upsert({
-          where: {
-            matchId_athleteId: {
-              matchId,
-              athleteId: stat.athleteId
-            }
-          },
-          update: stat,
-          create: {
-            matchId,
-            ...stat
-          }
-        });
-      }
-    });
-
-    return { message: 'Match statistics updated successfully' };
-  }
-
-  async getStats(matchId: string, organizationId: string) {
-    const match = await this.findById(matchId, organizationId);
-
-    const stats = await prisma.matchStat.findMany({
-      where: { matchId },
+        organizationId,
+        OR: [
+          { homeTeamId: teamId },
+          { awayTeamId: teamId }
+        ]
+      },
       include: {
-        athlete: {
-          include: {
-            position: true,
-            team: true
+        homeTeam: true,
+        awayTeam: true,
+        venue: true,
+        competition: true
+      },
+      orderBy: {
+        date: 'desc'
+      }
+    });
+    
+    return matches;
+  }
+  
+  // Get upcoming matches
+  async getUpcomingMatches(organizationId: string, limit: number = 5): Promise<MatchWithDetails[]> {
+    const matches = await prisma.match.findMany({
+      where: {
+        organizationId,
+        date: {
+          gte: new Date()
+        },
+        status: {
+          in: ['SCHEDULED', 'POSTPONED']
+        }
+      },
+      include: {
+        homeTeam: {
+          select: {
+            id: true,
+            name: true,
+            category: true
+          }
+        },
+        awayTeam: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        venue: {
+          select: {
+            name: true,
+            address: true
           }
         }
-      }
-    });
-
-    // Group by team and calculate totals
-    const homeStats = stats.filter(s => s.athlete.teamId === match.homeTeamId);
-    const awayStats = stats.filter(s => s.athlete.teamId === match.awayTeamId);
-
-    return {
-      home: {
-        players: homeStats,
-        totals: this.calculateTeamStats(homeStats)
       },
-      away: {
-        players: awayStats,
-        totals: this.calculateTeamStats(awayStats)
-      }
-    };
-  }
-
-  // Calendar view
-  async getCalendar(organizationId: string, params: {
-    teamId?: string;
-    month: number;
-    year: number;
-  }) {
-    const startDate = new Date(params.year, params.month - 1, 1);
-    const endDate = new Date(params.year, params.month, 0);
-
-    const matches = await this.findAll(organizationId, {
-      teamId: params.teamId,
-      fromDate: startDate,
-      toDate: endDate
+      orderBy: [
+        { date: 'asc' },
+        { time: 'asc' }
+      ],
+      take: limit
     });
-
-    // Group matches by date
-    const calendar = matches.data.reduce((acc, match) => {
-      const dateKey = match.matchDate.toISOString().split('T')[0];
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(match);
-      return acc;
-    }, {} as Record<string, typeof matches.data>);
-
-    return {
-      month: params.month,
-      year: params.year,
-      dates: calendar,
-      totalMatches: matches.total
-    };
+    
+    return matches;
   }
-
-  // Helper methods
-  private calculateTeamStats(stats: any[]) {
-    return {
-      goals: stats.reduce((sum, s) => sum + (s.goals || 0), 0),
-      assists: stats.reduce((sum, s) => sum + (s.assists || 0), 0),
-      yellowCards: stats.reduce((sum, s) => sum + (s.yellowCards || 0), 0),
-      redCards: stats.reduce((sum, s) => sum + (s.redCards || 0), 0),
-      saves: stats.reduce((sum, s) => sum + (s.saves || 0), 0),
-      minutesPlayed: stats.reduce((sum, s) => sum + (s.minutesPlayed || 0), 0)
-    };
-  }
-
-  private validateStatusTransition(current: MatchStatus, next: MatchStatus) {
-    const validTransitions: Record<MatchStatus, MatchStatus[]> = {
-      SCHEDULED: ['IN_PROGRESS', 'CANCELLED', 'POSTPONED'],
-      IN_PROGRESS: ['COMPLETED', 'POSTPONED'],
-      COMPLETED: [],
-      CANCELLED: ['SCHEDULED'],
-      POSTPONED: ['SCHEDULED']
-    };
-
-    if (!validTransitions[current].includes(next)) {
-      throw BadRequestError(`Cannot transition from ${current} to ${next}`);
+  
+  // Helper functions
+  private calculateMatchStatus(match: Match): MatchStatus {
+    const now = new Date();
+    const matchDate = new Date(match.date);
+    
+    // Set match time if provided
+    if (match.time) {
+      const [hours, minutes] = match.time.split(':');
+      matchDate.setHours(parseInt(hours), parseInt(minutes));
     }
+    
+    // If match is in the past and not completed, mark as needing update
+    if (matchDate < now && match.status === 'SCHEDULED') {
+      return 'IN_PROGRESS'; // Or could return a custom status
+    }
+    
+    return match.status;
   }
-
-  private async sendStatusChangeNotification(match: any, previousStatus: MatchStatus) {
-    const statusMessages: Record<MatchStatus, string> = {
-      SCHEDULED: 'riprogrammata',
-      IN_PROGRESS: 'iniziata',
-      COMPLETED: 'conclusa',
-      CANCELLED: 'cancellata',
-      POSTPONED: 'posticipata'
-    };
-
-    await notificationService.create({
-      organizationId: match.organizationId,
-      type: 'match_status_changed',
-      severity: match.status === 'CANCELLED' ? 'warning' : 'info',
-      title: 'Aggiornamento Partita',
-      message: `La partita ${match.homeTeam.name} vs ${match.awayTeam.name} è stata ${statusMessages[match.status]}`,
-      relatedEntityType: 'match',
-      relatedEntityId: match.id
-    });
+  
+  private async createMatchNotification(
+    organizationId: string,
+    type: string,
+    message: string,
+    matchId: string
+  ): Promise<void> {
+    try {
+      await prisma.notification.create({
+        data: {
+          organizationId,
+          type,
+          title: 'Match Update',
+          message,
+          priority: type === 'MATCH_RESULT' ? 'low' : 'medium',
+          isRead: false,
+          metadata: { matchId }
+        }
+      });
+    } catch (error) {
+      logger.error('Error creating match notification:', error);
+    }
   }
 }
 

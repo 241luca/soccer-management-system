@@ -21,7 +21,7 @@ router.get('/', async (req: AuthRequest, res, next) => {
       usesTransport: req.query.usesTransport === 'true'
     };
     
-    const result = await athleteService.findAll(req.user!.organizationId, params);
+    const result = await athleteService.findAll(req.user?.organizationId || "", params);
     return res.json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -41,7 +41,7 @@ router.get('/', async (req: AuthRequest, res, next) => {
 router.get('/:id', async (req: AuthRequest, res, next) => {
   try {
     const { id } = idParamSchema.parse(req.params);
-    const athlete = await athleteService.findById(id, req.user!.organizationId);
+    const athlete = await athleteService.findById(id, req.user?.organizationId || "");
     return res.json(athlete);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -61,7 +61,7 @@ router.get('/:id', async (req: AuthRequest, res, next) => {
 router.get('/:id/statistics', async (req: AuthRequest, res, next) => {
   try {
     const { id } = idParamSchema.parse(req.params);
-    const stats = await athleteService.getStatistics(id, req.user!.organizationId);
+    const stats = await athleteService.getStatistics(id, req.user?.organizationId || "");
     return res.json(stats);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -81,7 +81,7 @@ router.get('/:id/statistics', async (req: AuthRequest, res, next) => {
 router.post('/', authorize('ADMIN', 'COACH'), async (req: AuthRequest, res, next) => {
   try {
     const data = createAthleteSchema.parse(req.body);
-    const athlete = await athleteService.create(data, req.user!.organizationId);
+    const athlete = await athleteService.create(data, req.user?.organizationId || "");
     return res.status(201).json(athlete);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -102,7 +102,7 @@ router.put('/:id', authorize('ADMIN', 'COACH'), async (req: AuthRequest, res, ne
   try {
     const { id } = idParamSchema.parse(req.params);
     const data = updateAthleteSchema.parse(req.body);
-    const athlete = await athleteService.update(id, data, req.user!.organizationId);
+    const athlete = await athleteService.update(id, data, req.user?.organizationId || "");
     return res.json(athlete);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -122,7 +122,7 @@ router.put('/:id', authorize('ADMIN', 'COACH'), async (req: AuthRequest, res, ne
 router.delete('/:id', authorize('ADMIN'), async (req: AuthRequest, res, next) => {
   try {
     const { id } = idParamSchema.parse(req.params);
-    const result = await athleteService.delete(id, req.user!.organizationId);
+    const result = await athleteService.delete(id, req.user?.organizationId || "");
     return res.json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -141,7 +141,7 @@ router.delete('/:id', authorize('ADMIN'), async (req: AuthRequest, res, next) =>
 // Bulk check documents (admin/coach)
 router.post('/bulk-check-documents', authorize('ADMIN', 'COACH'), async (req: AuthRequest, res, next) => {
   try {
-    const result = await athleteService.bulkCheckDocuments(req.user!.organizationId);
+    const result = await athleteService.bulkCheckDocuments(req.user?.organizationId || "");
     return res.json(result);
   } catch (error) {
     return next(error);
