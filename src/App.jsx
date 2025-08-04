@@ -32,6 +32,7 @@ const SoccerManagementApp = () => {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [user, setUser] = useState(null);
   const [organization, setOrganization] = useState(null);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   
   const { data, loading, stats, notifications, toast } = useData();
@@ -194,15 +195,28 @@ const SoccerManagementApp = () => {
         );
       case 'organizations':
         return (
-          <OrganizationList />
+          <OrganizationList 
+            onNavigate={(view, params) => {
+              if (params?.orgId) {
+                // Store orgId for edit view
+                setSelectedOrganizationId(params.orgId);
+              }
+              setCurrentView(view);
+            }}
+          />
         );
       case 'organizations-new':
         return (
-          <OrganizationForm />
+          <OrganizationForm 
+            onNavigate={setCurrentView}
+          />
         );
       case 'organizations-edit':
         return (
-          <OrganizationForm />
+          <OrganizationForm 
+            organizationId={selectedOrganizationId}
+            onNavigate={setCurrentView}
+          />
         );
       case 'profile':
         return (

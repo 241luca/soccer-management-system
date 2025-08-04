@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
   Users, 
@@ -18,8 +17,7 @@ import { api } from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
-const OrganizationList = () => {
-  const navigate = useNavigate();
+const OrganizationList = ({ onNavigate }) => {
   const { data: organizations, loading, error, refetch } = useApiData('/organizations');
   const [showDropdown, setShowDropdown] = useState(null);
 
@@ -62,15 +60,15 @@ const OrganizationList = () => {
   };
 
   const handleViewDetails = (orgId) => {
-    navigate(`/organizations/${orgId}`);
+    if (onNavigate) onNavigate('organizations-detail', { orgId });
   };
 
   const handleEdit = (orgId) => {
-    navigate(`/organizations/${orgId}/edit`);
+    if (onNavigate) onNavigate('organizations-edit', { orgId });
   };
 
   const handleSettings = (orgId) => {
-    navigate(`/organizations/${orgId}/settings`);
+    if (onNavigate) onNavigate('organizations-settings', { orgId });
   };
 
   if (loading) return <LoadingSpinner />;
@@ -85,7 +83,7 @@ const OrganizationList = () => {
           <p className="text-gray-600 mt-1">Gestisci tutte le società nel sistema</p>
         </div>
         <button
-          onClick={() => navigate('/organizations/new')}
+          onClick={() => onNavigate && onNavigate('organizations-new')}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
@@ -218,7 +216,7 @@ const OrganizationList = () => {
           <h3 className="text-lg font-medium text-gray-900">Nessuna organizzazione</h3>
           <p className="text-gray-500 mt-1">Crea la prima organizzazione per iniziare</p>
           <button
-            onClick={() => navigate('/organizations/new')}
+            onClick={() => onNavigate && onNavigate('organizations-new')}
             className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             Crea Organizzazione

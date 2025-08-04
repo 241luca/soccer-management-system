@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Building2, 
   Mail, 
@@ -14,10 +13,8 @@ import { api } from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
-const OrganizationForm = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const isEditMode = !!id;
+const OrganizationForm = ({ organizationId, onNavigate }) => {
+  const isEditMode = !!organizationId;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -58,12 +55,12 @@ const OrganizationForm = () => {
     if (isEditMode) {
       loadOrganization();
     }
-  }, [id]);
+  }, [organizationId]);
 
   const loadOrganization = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/organizations/${id}`);
+      const response = await api.get(`/organizations/${organizationId}`);
       const org = response.data;
       
       setFormData({
@@ -106,7 +103,7 @@ const OrganizationForm = () => {
 
     try {
       if (isEditMode) {
-        await api.put(`/organizations/${id}`, {
+        await api.put(`/organizations/${organizationId}`, {
           name: formData.name,
           code: formData.code,
           subdomain: formData.subdomain,
@@ -120,7 +117,7 @@ const OrganizationForm = () => {
         await api.post('/organizations/create', formData);
       }
       
-      navigate('/organizations');
+      if (onNavigate) onNavigate('organizations');
     } catch (err) {
       setError(err.response?.data?.error || err.message);
     } finally {
@@ -135,7 +132,7 @@ const OrganizationForm = () => {
       {/* Header */}
       <div className="mb-6">
         <button
-          onClick={() => navigate('/organizations')}
+          onClick={() => onNavigate && onNavigate('organizations')}
           className="mb-4 text-gray-600 hover:text-gray-900 flex items-center gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -331,7 +328,7 @@ const OrganizationForm = () => {
         <div className="flex justify-end gap-4">
           <button
             type="button"
-            onClick={() => navigate('/organizations')}
+            onClick={() => onNavigate && onNavigate('organizations')}
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             Annulla
