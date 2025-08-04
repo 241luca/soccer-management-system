@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-08-04
+
+### Added
+- 🏢 **Interfaccia gestione organizzazioni** per Super Admin
+  - Lista completa delle organizzazioni con filtri e statistiche
+  - Form creazione/modifica organizzazioni
+  - Gestione piani di abbonamento (Basic, Pro, Enterprise)
+- 🔄 **Organization Switcher** nel menu utente
+  - Cambio rapido tra società per utenti multi-organizzazione
+  - Indicatore visivo della società attualmente selezionata
+  - Aggiornamento automatico del contesto
+- 📋 Nuove routes nell'app per gestione organizzazioni
+  - `/organizations` - Lista organizzazioni
+  - `/organizations/new` - Crea nuova organizzazione
+  - `/organizations/:id/edit` - Modifica organizzazione
+
+### Changed
+- 🔧 Navigation aggiornata per includere Organization Switcher
+- 🔧 App.jsx ora gestisce stato dell'organizzazione corrente
+- 🔧 LoginPage modificato per passare dati completi (user + organization)
+- 📦 Menu Organizzazioni visibile solo per Super Admin
+
+### Removed
+- 🗑️ **File demoData.js completamente rimossi**
+  - `src/data/demoData.js` spostato in archivio
+  - `src/data/notificationDemoData.js` spostato in archivio
+  - Sistema ora completamente basato su API reali
+
 ## [1.0.0] - 2025-01-03
 
 ### Added

@@ -21,6 +21,8 @@ import ToastContainer from './components/notifications/ToastContainer';
 import NotificationDemo from './components/notifications/NotificationDemo';
 import AdminDashboard from './components/admin/AdminDashboard';
 import ConfigurationManager from './components/admin/ConfigurationManager';
+import OrganizationList from './components/organizations/OrganizationList';
+import OrganizationForm from './components/organizations/OrganizationForm';
 
 const SoccerManagementApp = () => {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -29,6 +31,7 @@ const SoccerManagementApp = () => {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [user, setUser] = useState(null);
+  const [organization, setOrganization] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   
   const { data, loading, stats, notifications, toast } = useData();
@@ -53,10 +56,24 @@ const SoccerManagementApp = () => {
     setAuthLoading(false);
   }, []);
 
-  const handleLogin = (userData) => {
-    console.log('Login successful:', userData);
-    setUser(userData);
-    toast.showSuccess(`Benvenuto ${userData.firstName || 'Utente'} ${userData.lastName || ''}!`);
+  const handleLogin = (loginData) => {
+    console.log('Login successful:', loginData);
+    // Il login può restituire sia userData che un oggetto con user e organization
+    if (loginData.user) {
+      setUser(loginData.user);
+      setOrganization(loginData.organization);
+      toast.showSuccess(`Benvenuto ${loginData.user.firstName || 'Utente'} ${loginData.user.lastName || ''}!`);
+    } else {
+      // Compatibilità con il vecchio formato
+      setUser(loginData);
+      toast.showSuccess(`Benvenuto ${loginData.firstName || 'Utente'} ${loginData.lastName || ''}!`);
+    }
+  };
+
+  const handleOrganizationSwitch = (switchData) => {
+    console.log('Organization switched:', switchData);
+    setOrganization(switchData.organization);
+    // Il componente OrganizationSwitcher già ricarica la pagina
   };
 
   const handleLogout = async () => {
@@ -175,6 +192,18 @@ const SoccerManagementApp = () => {
             toast={toast}
           />
         );
+      case 'organizations':
+        return (
+          <OrganizationList />
+        );
+      case 'organizations-new':
+        return (
+          <OrganizationForm />
+        );
+      case 'organizations-edit':
+        return (
+          <OrganizationForm />
+        );
       case 'profile':
         return (
           <div className="bg-white rounded-lg shadow p-6">
@@ -219,6 +248,8 @@ const SoccerManagementApp = () => {
         notifications={notifications}
         onLogout={handleLogout}
         user={user}
+        organization={organization}
+        onOrganizationSwitch={handleOrganizationSwitch}
       />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

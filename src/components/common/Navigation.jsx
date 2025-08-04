@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react';
 import NotificationDropdown from '../notifications/NotificationDropdown';
+import OrganizationSwitcher from '../organizations/OrganizationSwitcher';
 
 const Navigation = ({ 
   currentView, 
@@ -30,7 +31,9 @@ const Navigation = ({
   showAIAssistant,
   setShowAIAssistant,
   onLogout,
-  user
+  user,
+  organization,
+  onOrganizationSwitch
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -46,6 +49,11 @@ const Navigation = ({
     { id: 'admin', label: 'Amministrazione', icon: Settings, badge: null },
     { id: 'settings', label: 'Impostazioni', icon: Settings, badge: null }
   ];
+
+  // Aggiungi la voce Organizzazioni solo per Super Admin
+  if (user?.role === 'SUPER_ADMIN') {
+    navItems.splice(8, 0, { id: 'organizations', label: 'Organizzazioni', icon: Building2, badge: null });
+  }
 
   const handleChangePassword = () => {
     setShowUserMenu(false);
@@ -144,6 +152,13 @@ const Navigation = ({
 
             {/* Right side actions */}
             <div className="flex items-center space-x-2">
+              {/* Organization Switcher */}
+              {user && organization && onOrganizationSwitch && (
+                <OrganizationSwitcher 
+                  currentOrganization={organization}
+                  onSwitch={onOrganizationSwitch}
+                />
+              )}
               {/* Desktop Only Icons */}
               <div className="hidden sm:flex items-center space-x-2">
                 <NotificationDropdown 

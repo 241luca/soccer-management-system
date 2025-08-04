@@ -59,7 +59,8 @@ export default function LoginPage({ onLogin }) {
       if (data.requiresOrganizationSelection) {
         setOrganizations(data.organizations);
       } else {
-        onLogin(data.user);
+        // Passa l'intero oggetto data che contiene user e organization
+        onLogin(data);
       }
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -74,7 +75,8 @@ export default function LoginPage({ onLogin }) {
 
     try {
       const data = await api.login(formData.email, formData.password, organizationId);
-      onLogin(data.user);
+      // Passa l'intero oggetto data che contiene user e organization
+      onLogin(data);
     } catch (err) {
       setError(err.message || 'Login failed');
       setOrganizations(null);
