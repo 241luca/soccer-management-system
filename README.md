@@ -2,7 +2,7 @@
 
 Sistema completo per la gestione di società calcistiche - Multi-tenant, responsive, con gestione atleti, squadre, documenti e pagamenti.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
 ![PostgreSQL](https://img.shields.io/badge/postgresql-15-blue)
@@ -16,9 +16,12 @@ Sistema completo per la gestione di società calcistiche - Multi-tenant, respons
 - 📅 **Calendario Partite** - Gestione match e convocazioni
 - 🚌 **Trasporti** - Organizzazione trasporti per zone
 - 🔔 **Notifiche** - Sistema real-time per scadenze e promemoria
-- 👤 **Multi-tenant** - Supporto per multiple organizzazioni
+- 🏢 **Multi-tenant** - Supporto per multiple organizzazioni con piani abbonamento
+- 🔄 **Organization Switcher** - Cambio rapido tra società per utenti multi-org
 - 📱 **Responsive** - Ottimizzato per mobile, tablet e desktop
 - 🔐 **Sicurezza** - JWT auth, rate limiting, RBAC
+- 🤖 **AI Assistant** - Assistente intelligente integrato
+- 📈 **Dashboard Analytics** - Statistiche e grafici real-time
 
 ## 🚀 Quick Start
 
