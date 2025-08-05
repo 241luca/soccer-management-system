@@ -50,7 +50,7 @@ class ApiClient {
     
     // For Super Admin, use Demo organization if no organization is set
     if (!organizationId && isSuperAdmin) {
-      organizationId = '43c973a6-5e20-43af-a295-805f1d7c86b1'; // Demo Soccer Club ID
+      organizationId = 'c84fcaaf-4e94-4f42-b901-a080c1f2280e'; // Demo Soccer Club ID (real ID in DB)
       console.log('Super Admin: Using default Demo organization ID');
     }
     

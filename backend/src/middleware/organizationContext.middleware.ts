@@ -14,7 +14,7 @@ export const ensureOrganizationContext = (req: AuthRequest, res: Response, next:
     
     // If still no organization ID, use Demo organization as default
     if (!organizationId) {
-      organizationId = '43c973a6-5e20-43af-a295-805f1d7c86b1'; // Demo Soccer Club ID
+      organizationId = 'c84fcaaf-4e94-4f42-b901-a080c1f2280e'; // Demo Soccer Club ID (real ID in DB)
     }
     
     // Set it on the user object for downstream use
@@ -46,7 +46,7 @@ export const getOrganizationId = (req: AuthRequest): string => {
   // For Super Admin, check header or use default
   if (req.user?.isSuperAdmin) {
     const headerOrgId = req.headers['x-organization-id'] as string;
-    return headerOrgId || '43c973a6-5e20-43af-a295-805f1d7c86b1'; // Demo Soccer Club ID
+    return headerOrgId || 'c84fcaaf-4e94-4f42-b901-a080c1f2280e'; // Demo Soccer Club ID (real ID in DB)
   }
   
   throw new BadRequestError('Organization ID required');

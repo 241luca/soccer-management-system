@@ -42,7 +42,7 @@ const SoccerManagementApp = () => {
   // Funzione per caricare l'organizzazione di default per Super Admin
   const loadDefaultOrganization = async () => {
     try {
-      const demoOrgId = '43c973a6-5e20-43af-a295-805f1d7c86b1';
+      const demoOrgId = 'c84fcaaf-4e94-4f42-b901-a080c1f2280e'; // ID reale nel database
       const response = await api.get(`/organizations/${demoOrgId}/details`);
       const orgData = response.data || response;
       
@@ -53,7 +53,7 @@ const SoccerManagementApp = () => {
       console.error('Error loading default organization:', error);
       // Fallback to basic data if API fails
       const basicOrg = {
-        id: '43c973a6-5e20-43af-a295-805f1d7c86b1',
+        id: 'c84fcaaf-4e94-4f42-b901-a080c1f2280e',
         name: 'Demo Soccer Club',
         code: 'DEMO'
       };
