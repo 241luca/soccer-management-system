@@ -1,84 +1,93 @@
 # 📚 Soccer Management System - Documentazione
 
-## Indice Generale
+Sistema completo per la gestione di società di calcio con supporto multi-tenant.
 
-### 🚀 Getting Started
-- [README Principale](../README.md) - Panoramica del progetto
-- [Quick Start Guide](./guides/quick-start.md) - Inizia subito
-- [Installation Guide](./deployment/installation.md) - Installazione dettagliata
+## 🏗️ Stato del Progetto
 
-### 📋 Guide Utente
+### ✅ Completato
+- **Frontend**: Interfaccia completa con React, TypeScript e Tailwind CSS
+- **Backend**: API REST complete con Node.js, Express e PostgreSQL
+- **Autenticazione**: Sistema JWT con ruoli e permessi
+- **Multi-tenancy**: Supporto per multiple società
+- **Modulo Anagrafica**: Gestione completa dati societari (**NUOVO - Completato!**)
 
-#### Gestione Organizzazioni
-- [**Anagrafica Società**](./guides/organization-management.md) - Guida completa gestione organizzazioni
-- [Changelog Organizzazioni](./CHANGELOG_ORGANIZATIONS.md) - Novità v2.0
-- [Multi-Società](./guides/multi-organization.md) - Gestione multiple società
+### 🚧 In Sviluppo
+- Test end-to-end
+- Ottimizzazioni performance
+- Sistema notifiche real-time
 
-#### Gestione Sportiva
-- [Gestione Atleti](./guides/athletes-management.md)
-- [Gestione Squadre](./guides/teams-management.md)
-- [Calendario e Partite](./guides/matches-calendar.md)
+## 📁 Struttura Documentazione
 
-#### Amministrazione
-- [Documenti](./guides/documents.md)
-- [Pagamenti e Quote](./guides/payments.md)
-- [Notifiche](./guides/notifications.md)
+```
+docs/
+├── README.md                    # Questo file
+├── guides/                      # Guide per utenti finali
+│   ├── user-manual.md          # Manuale utente
+│   ├── admin-guide.md          # Guida amministratore
+│   └── quick-start.md          # Guida rapida
+├── development/                 # Guide per sviluppatori
+│   ├── setup.md                # Setup ambiente sviluppo
+│   ├── architecture.md         # Architettura sistema
+│   ├── database.md             # Schema database
+│   └── coding-standards.md     # Standard di codifica
+├── api/                        # Documentazione API REST
+│   ├── README.md               # Overview API
+│   ├── authentication.md       # API Autenticazione
+│   ├── organizations.md        # API Organizzazioni (**AGGIORNATO**)
+│   ├── sponsors.md             # API Sponsor (**NUOVO**)
+│   ├── staff.md                # API Staff (**NUOVO**)
+│   ├── team-kits.md           # API Maglie (**NUOVO**)
+│   └── documents.md            # API Documenti (**NUOVO**)
+├── deployment/                 # Guide deployment
+│   ├── docker.md              # Deploy con Docker
+│   ├── production.md          # Deploy in produzione
+│   └── troubleshooting.md     # Risoluzione problemi
+├── project/                    # Project management
+│   ├── roadmap.md             # Roadmap progetto
+│   ├── changelog.md           # Log modifiche
+│   └── contributors.md        # Contributori
+└── features/                   # Documentazione funzionalità
+    ├── multi-tenant.md        # Sistema multi-tenant
+    ├── permissions.md         # Sistema permessi
+    └── anagrafica-societa.md  # Modulo anagrafica (**NUOVO**)
+```
 
-### 🔧 Documentazione Tecnica
+## 🚀 Quick Links
 
-#### Architettura
-- [Panoramica Architettura](./development/architecture.md)
-- [**Organizzazioni - Tech Docs**](./development/organization-technical.md) - Dettagli tecnici modulo organizzazioni
-- [Database Schema](./development/database-schema.md)
-- [Security Model](./development/security.md)
+### Per Iniziare
+- [Setup Sviluppo](development/setup.md)
+- [Guida Rapida](guides/quick-start.md)
+- [Architettura Sistema](development/architecture.md)
 
-#### API Reference
-- [API Overview](./api/README.md)
-- [**Organizations API**](./api/organizations-api.md) - Endpoint organizzazioni
-- [Authentication API](./api/auth-api.md)
-- [Athletes API](./api/athletes-api.md)
-- [Teams API](./api/teams-api.md)
+### API Reference
+- [Documentazione API](api/README.md)
+- [Autenticazione](api/authentication.md)
+- [API Organizzazioni](api/organizations.md) (**Aggiornato**)
+- [API Sponsor](api/sponsors.md) (**Nuovo**)
 
-#### Development
-- [Development Setup](./development/setup.md)
-- [Coding Standards](./development/coding-standards.md)
-- [Testing Guide](./development/testing.md)
-- [Contributing](./development/contributing.md)
+### Deployment
+- [Deploy con Docker](deployment/docker.md)
+- [Deploy in Produzione](deployment/production.md)
 
-### 📊 Project Management
-- [Roadmap](./project/roadmap.md)
-- [Milestones](./project/milestones.md)
-- [Tech Debt](./project/tech-debt.md)
+## 🆕 Ultime Modifiche
 
-### 🚀 Deployment
-- [Production Setup](./deployment/production.md)
-- [Docker Guide](./deployment/docker.md)
-- [Environment Variables](./deployment/environment.md)
-- [Backup & Recovery](./deployment/backup.md)
+### v2.0.0 - Modulo Anagrafica Società (Agosto 2025)
+- ✅ API complete per gestione anagrafica societaria
+- ✅ Modulo Sponsor con statistiche
+- ✅ Gestione Staff con compensi
+- ✅ Team Kits con e-commerce
+- ✅ Upload/download documenti societari
+- ✅ Validazioni server-side complete
+- ✅ Sistema permessi multi-tenant migliorato
 
-### 📝 Changelog
-- [Main Changelog](./CHANGELOG.md)
-- [**Organizations Changelog**](./CHANGELOG_ORGANIZATIONS.md) - v2.0 Updates
-- [API Changes](./api/CHANGELOG.md)
-
-## 🆕 Novità v2.0 - Gennaio 2025
-
-### Anagrafica Società Completamente Ridisegnata
-- ✨ **10 Tab Specializzati**: Informazioni, Contatti, Legale, Aspetto, Social, Strutture, Maglie, Staff, Sponsor, Documenti
-- 💰 **Gestione Sponsor**: Contratti, visibilità, categorie
-- 💸 **Compensi Staff**: Stipendi, contratti, pagamenti
-- 🛍️ **E-commerce Maglie**: Shop online integrato
-- 🏢 **Multi-Società Enhanced**: Per manager di più organizzazioni
-- 🔄 **Navigazione Intuitiva**: Flusso ottimizzato
-
-[Leggi il changelog completo →](./CHANGELOG_ORGANIZATIONS.md)
+[Changelog Completo](project/changelog.md)
 
 ## 📞 Supporto
 
-- **Email**: support@soccermanager.com
-- **GitHub Issues**: [Report a bug](https://github.com/241luca/soccer-management-system/issues)
-- **Wiki**: [Knowledge Base](https://github.com/241luca/soccer-management-system/wiki)
+Per supporto o domande:
+- Email: lucamambelli@lmtecnologie.it
+- Repository: [GitHub](https://github.com/241luca/soccer-management-system)
 
----
+## 📄 Licenza
 
-*Documentazione aggiornata a: Gennaio 2025 - v2.0*
+Proprietario - Tutti i diritti riservati

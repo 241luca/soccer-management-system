@@ -309,6 +309,56 @@ enum PaymentStatus {
 - ✅ `ErrorMessage` - Messaggi errore stilizzati
 - ✅ Navigazione senza react-router-dom
 
+## 🆕 Modifiche Recenti (Agosto 2025 - v2.0.0)
+
+### Backend Anagrafica Società Completo
+
+#### 1. API Organizations Enhanced
+- ✅ **GET /organizations/:id/details** - Ritorna tutti i campi anagrafica con _count relazioni
+- ✅ **PUT /organizations/:id** - Aggiornamento con validazioni complete server-side
+- ✅ Gestione permessi multi-tenant (Super Admin, Owner, Admin)
+- ✅ Validazioni: email, colori hex, IBAN, CF, P.IVA, URL, CAP, provincia
+
+#### 2. Nuovo Modulo Sponsor
+- ✅ **CRUD completo** per gestione sponsor societari
+- ✅ Tipi sponsor: main, technical, gold, silver, bronze, partner
+- ✅ Visibilità: jersey, website, stadium, materials, events
+- ✅ **Summary automatico** con totale sponsor, per tipo e revenue annuale
+- ✅ Soft delete per mantenere storico
+
+#### 3. Staff Management Enhanced
+- ✅ Nuovi campi: **salary**, **contractType**, **paymentFrequency**
+- ✅ Tipi contratto: full-time, part-time, volunteer, consultant
+- ✅ Frequenze: monthly, weekly, hourly, per-event
+- ✅ Filtro includeInactive per vedere staff non attivo
+
+#### 4. Team Kits E-commerce Ready
+- ✅ Campi e-commerce: **shopUrl**, **merchandiseUrl**, **price**, **availableSizes**
+- ✅ Filtri avanzati: season, kitType, teamId
+- ✅ Validazione URL shop e prezzi
+- ✅ Array taglie disponibili per gestione stock
+
+#### 5. Organization Documents (Nuovo)
+- ✅ **Upload sicuro** con multer (max 10MB)
+- ✅ Tipi supportati: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF
+- ✅ Categorizzazione: statuto, bilancio, verbale, certificato, etc.
+- ✅ **Documenti pubblici/privati** con controllo accessi
+- ✅ Tags e metadata per ricerca avanzata
+- ✅ Download streaming con headers corretti
+
+#### 6. Infrastruttura e Validazioni
+- ✅ Aggiunto **express-validator** per validazioni robuste
+- ✅ Nuova struttura `/validators` per logica validazione
+- ✅ Aggiunto **multer** per gestione upload file
+- ✅ Pattern consistente di soft delete (isActive)
+- ✅ Error handling migliorato con codici specifici
+
+#### 7. Database Updates
+- ✅ Migrazione **add_sponsor_and_updates.sql** eseguita
+- ✅ Tabella Sponsor con indici ottimizzati
+- ✅ StaffMember aggiornata con campi compensi
+- ✅ TeamKit aggiornata con campi e-commerce
+
 ## 🆕 Modifiche Recenti (Gennaio 2025)
 
 ### 1. Fix Sistema di Autenticazione
@@ -418,8 +468,54 @@ MIT
 - Luca Mambelli - Lead Developer
 - GitHub: [@241luca](https://github.com/241luca)
 
+### Struttura API Aggiornata
+
+```
+/api/v1/
+├── organizations/:id/details    # GET - Dettagli completi
+├── organizations/:id           # PUT - Aggiorna organizzazione
+├── organizations/:orgId/sponsors  # GET, POST - Gestione sponsor
+├── sponsors/:id                # PUT, DELETE - Modifica sponsor
+├── organizations/:orgId/staff  # GET, POST - Lista e crea staff
+├── staff/:id                   # GET, PUT, DELETE - Gestione staff
+├── organizations/:orgId/kits   # GET, POST - Lista e crea kit
+├── kits/:id                    # GET, PUT, DELETE - Gestione kit
+├── organizations/:orgId/documents # GET, POST - Lista e upload doc
+└── documents/:id               # GET (download), PUT, DELETE
+```
+
+### Nuove Dipendenze
+
+```json
+{
+  "multer": "^1.4.5-lts.1",
+  "@types/multer": "^1.4.11",
+  "express-validator": "^7.0.1"
+}
+```
+
+### File Structure Backend
+
+```
+backend/src/
+├── routes/
+│   ├── organization.routes.ts (updated)
+│   ├── sponsors.routes.ts (new)
+│   ├── staff.routes.ts (new)
+│   ├── teamKits.routes.ts (new)
+│   └── organizationDocuments.routes.ts (new)
+├── validators/
+│   ├── organization.validator.ts (new)
+│   └── sponsor.validator.ts (new)
+├── services/
+│   └── organization.service.ts (updated)
+└── uploads/
+    └── documents/
+        └── organizations/ (new directory)
+```
+
 ---
-*Ultimo aggiornamento: 4 Agosto 2025*
+*Ultimo aggiornamento: 5 Agosto 2025*
 
 ## 📝 Note di Sviluppo
 
