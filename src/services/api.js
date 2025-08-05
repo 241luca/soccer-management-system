@@ -215,6 +215,16 @@ class ApiClient {
                            'position']; // position deve essere positionId
     fieldsToRemove.forEach(field => delete cleanData[field]);
     
+    // Correggi il formato del telefono (rimuovi trattini e spazi)
+    if (cleanData.phone) {
+      cleanData.phone = cleanData.phone.replace(/[^+\d]/g, '');
+    }
+    
+    // Correggi il formato del CAP (deve essere solo numeri)
+    if (cleanData.postalCode) {
+      cleanData.postalCode = cleanData.postalCode.replace(/\D/g, '');
+    }
+    
     // Rimuovi campi vuoti o null
     Object.keys(cleanData).forEach(key => {
       if (cleanData[key] === null || cleanData[key] === '' || cleanData[key] === undefined) {
