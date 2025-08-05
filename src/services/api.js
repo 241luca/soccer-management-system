@@ -50,6 +50,8 @@ class ApiClient {
         // 1. We have an organizationId AND
         // 2. It's not a specific organization endpoint (like /organizations/{id}/details)
         ...(organizationId && !isSpecificOrgEndpoint && { 'X-Organization-ID': organizationId }),
+        // Add Super Admin header if needed
+        ...(isSuperAdmin && { 'X-Super-Admin': 'true' }),
         ...options.headers
       }
     };

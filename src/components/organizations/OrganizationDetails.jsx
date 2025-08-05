@@ -29,7 +29,11 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
 const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
-  console.log('OrganizationDetails mounted with organizationId:', organizationId, 'canEdit:', canEdit);
+  console.log('OrganizationDetails mounted with:', {
+    organizationId, 
+    canEdit,
+    user: JSON.parse(localStorage.getItem('user') || '{}')
+  });
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,6 +67,24 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
       setFormData(organizationData);
     } catch (error) {
       console.error('Error loading organization details:', error);
+      
+      // Se è un errore 403 per Super Admin, proviamo a caricare comunque i dati base
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if ((error.message?.includes('Super admin access required') || error.message?.includes('403')) && 
+          (user.role === 'SUPER_ADMIN' || user.isSuperAdmin)) {
+        
+        // Carica almeno i dati dal localStorage se disponibili
+        const storedOrg = localStorage.getItem('organization');
+        if (storedOrg) {
+          const orgData = JSON.parse(storedOrg);
+          if (orgData.id === organizationId) {
+            setOrganization(orgData);
+            setFormData(orgData);
+            return;
+          }
+        }
+      }
+      
       setErrors({ general: 'Errore nel caricamento dei dati: ' + (error.message || 'Errore sconosciuto') });
     } finally {
       setLoading(false);
