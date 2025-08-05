@@ -5,6 +5,27 @@ Tutte le modifiche significative al Soccer Management System sono documentate in
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.1.0] - 2025-08-05
+
+### 🆕 Aggiunto
+- **Gestione Documenti Atleti Completa**: 
+  - Nuovo componente AthleteDocuments per upload/download documenti
+  - Tipi documento predefiniti (certificato medico, assicurazione, carta identità, etc.)
+  - Controllo scadenze automatico con stati (valido, in scadenza, scaduto)
+  - Upload file fino a 10MB (PDF/JPG/PNG)
+  - Gestione documenti obbligatori e facoltativi
+
+### 🔧 Modificato
+- **Salvataggio Atleti Funzionante**:
+  - Collegato le funzioni CRUD al backend
+  - Aggiunta validazione campi obbligatori
+  - Gestione corretta di firstName/lastName
+  - Toast di conferma per operazioni
+
+### 🐛 Risolto
+- Fix salvataggio che chiudeva il modal senza salvare
+- Fix gestione corretta dei tipi numerici nel form
+
 ## [2.0.3] - 2025-08-05
 
 ### 🐛 Risolto

@@ -1,6 +1,6 @@
 // components/athletes/AthleteDocuments.jsx
 import React, { useState, useEffect } from 'react';
-import { FileText, Upload, Download, Trash2, Calendar, AlertTriangle, Check, X, Eye } from 'lucide-react';
+import { FileText, Upload, Download, Trash2, Calendar, AlertTriangle, Check, X, Eye, Plus, Settings } from 'lucide-react';
 import StatusBadge from '../common/StatusBadge';
 import { api } from '../../services/api';
 
@@ -9,35 +9,72 @@ const AthleteDocuments = ({ athleteId, isEditing = false, toast }) => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showTypeModal, setShowTypeModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const [customTypes, setCustomTypes] = useState([]);
 
-  const documentTypes = [
-    { value: 'medical_certificate', label: 'Certificato Medico Sportivo', required: true },
-    { value: 'insurance', label: 'Assicurazione Sportiva', required: true },
-    { value: 'identity_card', label: 'Carta d\'Identità', required: true },
-    { value: 'photo', label: 'Foto Tessera', required: false },
-    { value: 'parent_authorization', label: 'Autorizzazione Genitori (minori)', required: false },
-    { value: 'privacy_consent', label: 'Consenso Privacy', required: true },
-    { value: 'registration_form', label: 'Modulo Iscrizione', required: true },
-    { value: 'other', label: 'Altro', required: false }
+  // Tipi di documento predefiniti
+  const defaultDocumentTypes = [
+    { value: 'medical_certificate', label: 'Certificato Medico Sportivo', required: true, requiresExpiry: true },
+    { value: 'insurance', label: 'Assicurazione Sportiva', required: true, requiresExpiry: true },
+    { value: 'identity_card', label: 'Carta d\'Identità', required: true, requiresExpiry: true },
+    { value: 'photo', label: 'Foto Tessera', required: false, requiresExpiry: false },
+    { value: 'parent_authorization', label: 'Autorizzazione Genitori (minori)', required: false, requiresExpiry: false },
+    { value: 'privacy_consent', label: 'Consenso Privacy', required: true, requiresExpiry: false },
+    { value: 'registration_form', label: 'Modulo Iscrizione', required: true, requiresExpiry: false },
+    { value: 'other', label: 'Altro', required: false, requiresExpiry: false }
   ];
+
+  // Combina tipi predefiniti e personalizzati
+  const documentTypes = [...defaultDocumentTypes, ...customTypes];
 
   useEffect(() => {
     if (athleteId) {
       loadDocuments();
+    } else {
+      // Se non c'è un atleteId (nuovo atleta), non caricare
+      setLoading(false);
     }
+    loadCustomTypes();
   }, [athleteId]);
 
   const loadDocuments = async () => {
+    if (!athleteId) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       const response = await api.get(`/athletes/${athleteId}/documents`);
-      setDocuments(response.data || []);
+      setDocuments(response.data || response || []);
     } catch (error) {
       console.error('Error loading documents:', error);
-      toast?.showError('Errore nel caricamento documenti');
+      // Non mostrare errore se è 404 (nessun documento)
+      if (error.message && !error.message.includes('404')) {
+        toast?.showError('Errore nel caricamento documenti');
+      }
+      setDocuments([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCustomTypes = async () => {
+    try {
+      // Carica tipi personalizzati dall'organizzazione
+      const response = await api.get('/organization/document-types');
+      const types = (response.data || response || []).map(type => ({
+        ...type,
+        value: type.value || type.id,
+        label: type.label || type.name,
+        required: type.required || false,
+        requiresExpiry: type.requiresExpiry || false
+      }));
+      setCustomTypes(types);
+    } catch (error) {
+      // Ignora errori, usa solo tipi predefiniti
+      console.log('No custom document types');
     }
   };
 
@@ -135,8 +172,19 @@ const AthleteDocuments = ({ athleteId, isEditing = false, toast }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [documentType, setDocumentType] = useState('');
     const [expiryDate, setExpiryDate] = useState('');
+    const [showExpiryDate, setShowExpiryDate] = useState(false);
 
-    const needsExpiryDate = ['medical_certificate', 'insurance'].includes(documentType);
+    // Controlla se il tipo selezionato richiede data di scadenza
+    useEffect(() => {
+      const selectedType = documentTypes.find(t => t.value === documentType);
+      if (selectedType) {
+        setShowExpiryDate(selectedType.requiresExpiry || false);
+        // Se non richiede scadenza, pulisci il campo
+        if (!selectedType.requiresExpiry) {
+          setExpiryDate('');
+        }
+      }
+    }, [documentType]);
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -162,7 +210,28 @@ const AthleteDocuments = ({ athleteId, isEditing = false, toast }) => {
               </select>
             </div>
 
-            {needsExpiryDate && (
+            {/* Checkbox per data scadenza opzionale */}
+            {documentType && !showExpiryDate && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="addExpiry"
+                  checked={expiryDate !== ''}
+                  onChange={(e) => {
+                    if (!e.target.checked) {
+                      setExpiryDate('');
+                    }
+                  }}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="addExpiry" className="text-sm text-gray-700">
+                  Aggiungi data di scadenza (opzionale)
+                </label>
+              </div>
+            )}
+
+            {/* Campo data scadenza */}
+            {(showExpiryDate || expiryDate !== '') && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Data Scadenza *
@@ -203,16 +272,149 @@ const AthleteDocuments = ({ athleteId, isEditing = false, toast }) => {
                   alert('Compila tutti i campi obbligatori');
                   return;
                 }
-                if (needsExpiryDate && !expiryDate) {
-                  alert('Inserisci la data di scadenza');
+                const selectedTypeInfo = documentTypes.find(t => t.value === documentType);
+                if (selectedTypeInfo?.requiresExpiry && !expiryDate) {
+                  alert('Inserisci la data di scadenza per questo tipo di documento');
                   return;
                 }
-                handleUpload(selectedFile, documentType, expiryDate);
+                handleUpload(selectedFile, documentType, expiryDate || null);
               }}
               disabled={uploading}
               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50"
             >
               {uploading ? 'Caricamento...' : 'Carica'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const TypeManagementModal = () => {
+    const [newType, setNewType] = useState({
+      label: '',
+      required: false,
+      requiresExpiry: false
+    });
+
+    const handleAddType = async () => {
+      if (!newType.label) {
+        alert('Inserisci il nome del tipo di documento');
+        return;
+      }
+
+      try {
+        const typeValue = newType.label.toLowerCase().replace(/\s+/g, '_');
+        const typeToAdd = {
+          ...newType,
+          value: typeValue,
+          id: Date.now().toString() // ID temporaneo
+        };
+
+        // Salva nel backend
+        await api.post('/organization/document-types', typeToAdd);
+        
+        // Aggiungi localmente
+        setCustomTypes([...customTypes, typeToAdd]);
+        setNewType({ label: '', required: false, requiresExpiry: false });
+        toast?.showSuccess('Tipo documento aggiunto');
+        setShowTypeModal(false);
+      } catch (error) {
+        // Se il backend non supporta, salva solo localmente
+        const typeValue = newType.label.toLowerCase().replace(/\s+/g, '_');
+        const typeToAdd = {
+          ...newType,
+          value: typeValue
+        };
+        setCustomTypes([...customTypes, typeToAdd]);
+        setNewType({ label: '', required: false, requiresExpiry: false });
+        toast?.showSuccess('Tipo documento aggiunto localmente');
+        setShowTypeModal(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <h3 className="text-lg font-semibold mb-4">Gestione Tipi Documento</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nome Tipo Documento *
+              </label>
+              <input
+                type="text"
+                value={newType.label}
+                onChange={(e) => setNewType({...newType, label: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="es. Certificato Vaccinazioni"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="required"
+                  checked={newType.required}
+                  onChange={(e) => setNewType({...newType, required: e.target.checked})}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="required" className="text-sm text-gray-700">
+                  Documento obbligatorio
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="requiresExpiry"
+                  checked={newType.requiresExpiry}
+                  onChange={(e) => setNewType({...newType, requiresExpiry: e.target.checked})}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="requiresExpiry" className="text-sm text-gray-700">
+                  Richiede data di scadenza
+                </label>
+              </div>
+            </div>
+
+            {/* Lista tipi personalizzati */}
+            {customTypes.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Tipi Personalizzati:</h4>
+                <div className="space-y-1">
+                  {customTypes.map((type, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <span>{type.label}</span>
+                      <button
+                        onClick={() => {
+                          setCustomTypes(customTypes.filter((_, i) => i !== index));
+                        }}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <button
+              onClick={() => setShowTypeModal(false)}
+              className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg"
+            >
+              Chiudi
+            </button>
+            <button
+              onClick={handleAddType}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+            >
+              Aggiungi Tipo
             </button>
           </div>
         </div>
@@ -234,13 +436,23 @@ const AthleteDocuments = ({ athleteId, isEditing = false, toast }) => {
       {isEditing && (
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold">Documenti Atleta</h3>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Carica Documento
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowTypeModal(true)}
+              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"
+              title="Gestisci tipi documento"
+            >
+              <Settings className="h-4 w-4" />
+              Tipi Documento
+            </button>
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Carica Documento
+            </button>
+          </div>
         </div>
       )}
 
@@ -303,7 +515,7 @@ const AthleteDocuments = ({ athleteId, isEditing = false, toast }) => {
                 {!uploadedDoc && isEditing && (
                   <button
                     onClick={() => {
-                      setDocumentType(docType.value);
+                      // Pre-seleziona il tipo quando si clicca sul pulsante upload
                       setShowUploadModal(true);
                     }}
                     className="text-sm text-blue-600 hover:text-blue-800"
@@ -359,6 +571,9 @@ const AthleteDocuments = ({ athleteId, isEditing = false, toast }) => {
 
       {/* Mostra upload modal */}
       {showUploadModal && <UploadModal />}
+      
+      {/* Mostra modal gestione tipi */}
+      {showTypeModal && <TypeManagementModal />}
     </div>
   );
 };
