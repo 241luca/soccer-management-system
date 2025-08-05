@@ -170,12 +170,45 @@ class ApiClient {
   async updateAthlete(id, data) {
     console.log('updateAthlete called with:', { id, data });
     
-    // Rimuovi campi che potrebbero causare problemi
+    // Converti i dati dal formato frontend al formato backend
     const cleanData = { ...data };
+    
+    // Rimuovi campi che potrebbero causare problemi
     delete cleanData.id; // Non inviare l'ID nel body
     delete cleanData.name; // Campo legacy
     delete cleanData.assignedBus; // Solo l'ID
     delete cleanData.zone; // Solo l'ID
+    
+    // Converti age in birthDate se presente
+    if (cleanData.age !== undefined && !cleanData.birthDate) {
+      const birthYear = new Date().getFullYear() - cleanData.age;
+      cleanData.birthDate = `${birthYear}-01-01`;
+      delete cleanData.age;
+    }
+    
+    // Converti number in jerseyNumber se presente
+    if (cleanData.number !== undefined) {
+      cleanData.jerseyNumber = cleanData.number;
+      delete cleanData.number;
+    }
+    
+    // Converti usesBus in usesTransport se presente
+    if (cleanData.usesBus !== undefined) {
+      cleanData.usesTransport = cleanData.usesBus;
+      delete cleanData.usesBus;
+    }
+    
+    // Rimuovi campi legacy del frontend
+    const fieldsToRemove = ['membershipFee', 'feeStatus', 'medicalExpiry', 'insuranceExpiry', 
+                           'busFee', 'busFeeStatus', 'gamesPlayed', 'goals', 'yellowCards', 'redCards'];
+    fieldsToRemove.forEach(field => delete cleanData[field]);
+    
+    // Rimuovi campi vuoti o null
+    Object.keys(cleanData).forEach(key => {
+      if (cleanData[key] === null || cleanData[key] === '' || cleanData[key] === undefined) {
+        delete cleanData[key];
+      }
+    });
     
     console.log('Clean data to send:', cleanData);
     

@@ -8,21 +8,23 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    birthDate: '', // Cambiato da age a birthDate
+    name: '', // Backward compatibility
+    age: '',
     teamId: '',
     position: 'Centrocampista',
-    jerseyNumber: '', // Cambiato da number
+    number: '',
     phone: '',
     email: '',
     address: '',
-    city: '',
-    province: '',
-    postalCode: '',
-    fiscalCode: '',
-    status: 'ACTIVE',
-    usesTransport: false,
-    transportZoneId: '',
-    notes: ''
+    membershipFee: '',
+    feeStatus: 'pending',
+    medicalExpiry: '',
+    insuranceExpiry: '',
+    usesBus: false,
+    assignedBus: '',
+    zone: '',
+    busFee: 0,
+    busFeeStatus: 'pending'
   });
 
   const [activeTab, setActiveTab] = useState('personal');
@@ -30,33 +32,26 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
 
   useEffect(() => {
     if (athlete) {
-      // Calcola birthDate dall'età se non presente
-      let birthDate = '';
-      if (athlete.birthDate) {
-        birthDate = new Date(athlete.birthDate).toISOString().split('T')[0];
-      } else if (athlete.age) {
-        const year = new Date().getFullYear() - athlete.age;
-        birthDate = `${year}-01-01`;
-      }
-      
       setFormData({
         firstName: athlete.firstName || '',
         lastName: athlete.lastName || '',
-        birthDate: birthDate,
+        name: athlete.name || `${athlete.firstName || ''} ${athlete.lastName || ''}`.trim(),
+        age: athlete.age || '',
         teamId: athlete.teamId || '',
         position: athlete.position || 'Centrocampista',
-        jerseyNumber: athlete.jerseyNumber || athlete.number || '',
+        number: athlete.number || '',
         phone: athlete.phone || '',
         email: athlete.email || '',
         address: athlete.address || '',
-        city: athlete.city || '',
-        province: athlete.province || '',
-        postalCode: athlete.postalCode || '',
-        fiscalCode: athlete.fiscalCode || '',
-        status: athlete.status || 'ACTIVE',
-        usesTransport: athlete.usesTransport || athlete.usesBus || false,
-        transportZoneId: athlete.transportZoneId || athlete.zone?.id || '',
-        notes: athlete.notes || ''
+        membershipFee: athlete.membershipFee || '',
+        feeStatus: athlete.feeStatus || 'pending',
+        medicalExpiry: athlete.medicalExpiry ? new Date(athlete.medicalExpiry).toISOString().split('T')[0] : '',
+        insuranceExpiry: athlete.insuranceExpiry ? new Date(athlete.insuranceExpiry).toISOString().split('T')[0] : '',
+        usesBus: athlete.usesBus || false,
+        assignedBus: athlete.assignedBus?.id || '',
+        zone: athlete.zone?.id || '',
+        busFee: athlete.busFee || 0,
+        busFeeStatus: athlete.busFeeStatus || 'pending'
       });
     }
   }, [athlete]);
@@ -77,8 +72,8 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
       return;
     }
     
-    if (!formData.birthDate) {
-      alert('La data di nascita è obbligatoria');
+    if (!formData.age || formData.age < 10 || formData.age > 40) {
+      alert('L\'età deve essere tra 10 e 40 anni');
       return;
     }
     
@@ -89,33 +84,13 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
     
     // Prepara i dati per il salvataggio
     const dataToSave = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      birthDate: formData.birthDate,
-      teamId: formData.teamId,
-      position: formData.position,
-      jerseyNumber: formData.jerseyNumber ? parseInt(formData.jerseyNumber) : null,
-      phone: formData.phone || null,
-      email: formData.email || null,
-      address: formData.address || null,
-      city: formData.city || null,
-      province: formData.province || null,
-      postalCode: formData.postalCode || null,
-      fiscalCode: formData.fiscalCode || null,
-      status: formData.status,
-      usesTransport: formData.usesTransport,
-      transportZoneId: formData.transportZoneId || null,
-      notes: formData.notes || null
+      ...formData,
+      age: parseInt(formData.age),
+      teamId: formData.teamId, // NON convertire in intero, è un UUID
+      number: formData.number ? parseInt(formData.number) : null,
+      membershipFee: parseFloat(formData.membershipFee) || 0,
+      busFee: parseFloat(formData.busFee) || 0
     };
-    
-    // Rimuovi campi null per l'update
-    if (athlete) {
-      Object.keys(dataToSave).forEach(key => {
-        if (dataToSave[key] === null || dataToSave[key] === '') {
-          delete dataToSave[key];
-        }
-      });
-    }
     
     // Log per debug
     console.log('Dati da salvare:', dataToSave);
@@ -265,21 +240,23 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Data di nascita *
+                    Età *
                   </label>
                   {isEditing ? (
                     <input
-                      type="date"
-                      value={formData.birthDate}
-                      onChange={(e) => handleChange('birthDate', e.target.value)}
+                      type="number"
+                      value={formData.age}
+                      onChange={(e) => handleChange('age', parseInt(e.target.value))}
+                      min="10"
+                      max="40"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-900">
-                        {athlete?.birthDate ? new Date(athlete.birthDate).toLocaleDateString('it-IT') : ''}
-                        {athlete?.age && ` (${athlete.age} anni)`}
-                      </span>
+                      <span className="text-gray-900">{athlete?.age} anni</span>
+                      <StatusBadge status={athlete?.isAgeValid ? 'valid' : 'critical'}>
+                        {athlete?.isAgeValid ? 'Conforme' : 'Non conforme'}
+                      </StatusBadge>
                     </div>
                   )}
                 </div>
@@ -329,66 +306,16 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
                   Indirizzo
                 </label>
                 {isEditing ? (
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => handleChange('address', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Via/Piazza"
-                    />
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <input
-                        type="text"
-                        value={formData.city}
-                        onChange={(e) => handleChange('city', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Città"
-                      />
-                      <input
-                        type="text"
-                        value={formData.province}
-                        onChange={(e) => handleChange('province', e.target.value.toUpperCase())}
-                        maxLength="2"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="PR"
-                      />
-                      <input
-                        type="text"
-                        value={formData.postalCode}
-                        onChange={(e) => handleChange('postalCode', e.target.value)}
-                        maxLength="5"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="CAP"
-                      />
-                    </div>
-                  </div>
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => handleChange('address', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Via, Città, Provincia"
+                  />
                 ) : (
-                  <p className="text-gray-900">
-                    {athlete?.address && `${athlete.address}, `}
-                    {athlete?.city} {athlete?.province} {athlete?.postalCode}
-                  </p>
+                  <p className="text-gray-900">{athlete?.address}</p>
                 )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Codice Fiscale
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={formData.fiscalCode}
-                      onChange={(e) => handleChange('fiscalCode', e.target.value.toUpperCase())}
-                      maxLength="16"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="RSSMRA85M01H501Z"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{athlete?.fiscalCode}</p>
-                  )}
-                </div>
               </div>
             </div>
           )}
@@ -445,14 +372,14 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
                   {isEditing ? (
                     <input
                       type="number"
-                      value={formData.jerseyNumber}
-                      onChange={(e) => handleChange('jerseyNumber', e.target.value)}
+                      value={formData.number}
+                      onChange={(e) => handleChange('number', parseInt(e.target.value))}
                       min="1"
                       max="99"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   ) : (
-                    <p className="text-gray-900">#{athlete?.jerseyNumber || athlete?.number}</p>
+                    <p className="text-gray-900">#{athlete?.number}</p>
                   )}
                 </div>
               </div>
@@ -572,18 +499,18 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
               <div className="flex items-center gap-2 mb-4">
                 <input
                   type="checkbox"
-                  id="usesTransport"
-                  checked={formData.usesTransport}
-                  onChange={(e) => handleChange('usesTransport', e.target.checked)}
+                  id="usesBus"
+                  checked={formData.usesBus}
+                  onChange={(e) => handleChange('usesBus', e.target.checked)}
                   disabled={!isEditing}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="usesTransport" className="text-sm font-medium text-gray-700">
+                <label htmlFor="usesBus" className="text-sm font-medium text-gray-700">
                   Utilizza il servizio di trasporto
                 </label>
               </div>
 
-              {(formData.usesTransport || athlete?.usesTransport) && (
+              {(formData.usesBus || athlete?.usesBus) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -591,8 +518,8 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
                     </label>
                     {isEditing ? (
                       <select
-                        value={formData.transportZoneId}
-                        onChange={(e) => handleChange('transportZoneId', e.target.value)}
+                        value={formData.zone}
+                        onChange={(e) => handleChange('zone', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="">Seleziona zona</option>
@@ -605,6 +532,30 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
                     ) : (
                       <p className="text-gray-900">
                         {athlete?.zone?.name} ({athlete?.zone?.distance})
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Pulmino assegnato
+                    </label>
+                    {isEditing ? (
+                      <select
+                        value={formData.assignedBus}
+                        onChange={(e) => handleChange('assignedBus', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Seleziona pulmino</option>
+                        {data.buses.map(bus => (
+                          <option key={bus.id} value={bus.id}>
+                            {bus.name} - {bus.route}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="text-gray-900">
+                        {athlete?.assignedBus?.name}
                       </p>
                     )}
                   </div>
