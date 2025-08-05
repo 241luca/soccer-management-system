@@ -20,6 +20,8 @@ Il Super Admin non ha un `organizationId` nel suo token JWT (per design, dato ch
 ## File Modificati
 - `/backend/src/middleware/organizationContext.middleware.ts` (nuovo)
 - `/backend/src/routes/team.routes.ts` (aggiornato)
+- `/backend/src/routes/athlete.routes.ts` (aggiornato)
+- `/backend/src/routes/dashboard.routes.ts` (aggiornato)
 
 ## Prossimi Passi
 Gli stessi aggiornamenti devono essere applicati a:
