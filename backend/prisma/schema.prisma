@@ -210,6 +210,7 @@ model Athlete {
   positionId     Int?
   status         AthleteStatus @default(ACTIVE)
   usesTransport  Boolean       @default(false)
+  transportZoneId String?
   needsPromotion Boolean       @default(false)
   notes          String?       @db.Text
   createdAt      DateTime      @default(now())
@@ -219,9 +220,10 @@ model Athlete {
   organization   Organization     @relation(fields: [organizationId], references: [id])
   team           Team?            @relation(fields: [teamId], references: [id])
   position       Position?        @relation(fields: [positionId], references: [id])
+  transportZone  TransportZone?   @relation(fields: [transportZoneId], references: [id])
   documents      Document[]
   payments       Payment[]
-  transport      AthleteTransport?
+  busAthletes    BusAthlete[]
   matchRosters   MatchRoster[]
   matchStats     MatchStat[]
 
@@ -315,7 +317,6 @@ model Payment {
   athlete        Athlete      @relation(fields: [athleteId], references: [id])
   paymentType    PaymentType  @relation(fields: [paymentTypeId], references: [id])
   createdBy      User         @relation("PaymentCreator", fields: [createdById], references: [id])
-  invoice        Invoice?
 
   @@index([athleteId])
   @@index([status])
@@ -326,9 +327,10 @@ model PaymentType {
   id             Int      @id @default(autoincrement())
   organizationId String
   name           String
+  category       String
   amount         Decimal  @db.Decimal(10, 2)
-  frequency      String   // annual, monthly, quarterly, one-time
-  category       String   // membership, transport, equipment, events, other
+  isRecurring    Boolean  @default(false)
+  frequency      String?  // monthly, yearly, one-time
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -341,44 +343,33 @@ model PaymentType {
   @@index([organizationId])
 }
 
-model Invoice {
-  id            String   @id @default(uuid())
-  paymentId     String   @unique
-  invoiceNumber String   @unique
-  fileUrl       String?
-  createdAt     DateTime @default(now())
-
-  // Relations
-  payment       Payment  @relation(fields: [paymentId], references: [id])
-}
-
 model Match {
   id             String      @id @default(uuid())
   organizationId String
   competitionId  Int?
+  venueId        Int?
   homeTeamId     String
   awayTeamId     String
-  matchDate      DateTime    @db.Date
-  matchTime      DateTime    @db.Time
-  venueId        Int?
+  date           DateTime
+  time           DateTime?   @db.Time
   status         MatchStatus @default(SCHEDULED)
   homeScore      Int?
   awayScore      Int?
-  notes          String?
+  notes          String?     @db.Text
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
   // Relations
   organization   Organization  @relation(fields: [organizationId], references: [id])
   competition    Competition?  @relation(fields: [competitionId], references: [id])
+  venue          Venue?        @relation(fields: [venueId], references: [id])
   homeTeam       Team          @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeam       Team          @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  venue          Venue?        @relation(fields: [venueId], references: [id])
   rosters        MatchRoster[]
   stats          MatchStat[]
 
-  @@index([matchDate])
-  @@index([homeTeamId, awayTeamId])
+  @@index([date])
+  @@index([status])
 }
 
 model MatchRoster {
@@ -459,75 +450,89 @@ model Venue {
   @@index([organizationId])
 }
 
+// Transport Zone
 model TransportZone {
-  id             String   @id
+  id             String    @id @default(uuid())
   organizationId String
   name           String
-  distanceRange  String
-  monthlyFee     Decimal  @db.Decimal(10, 2)
-  color          String
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  description    String?
+  distanceRange  String    @default("0-5km")
+  monthlyFee     Decimal   @db.Decimal(10, 2)
+  color          String    @default("#3B82F6")
+  coordinates    Json?     // GeoJSON coordinates
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relations
-  organization   Organization       @relation(fields: [organizationId], references: [id])
-  transports     AthleteTransport[]
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  athletes       Athlete[]
 
-  @@unique([organizationId, id])
+  @@unique([organizationId, name])
   @@index([organizationId])
 }
 
+// Bus
 model Bus {
-  id             String      @id @default(uuid())
+  id             String    @id @default(uuid())
   organizationId String
   name           String
-  plateNumber    String?     @unique
   capacity       Int
+  plateNumber    String?
   driverName     String?
   driverPhone    String?
-  isActive       Boolean     @default(true)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  notes          String?   @db.Text
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relations
   organization   Organization @relation(fields: [organizationId], references: [id])
   routes         BusRoute[]
+  busAthletes    BusAthlete[]
 
+  @@unique([organizationId, plateNumber])
   @@index([organizationId])
 }
 
+// Bus Route
 model BusRoute {
-  id             String      @id @default(uuid())
+  id             String    @id @default(uuid())
   busId          String
   name           String
-  zonesCovered   String[]
-  departureTime  DateTime?   @db.Time
-  returnTime     DateTime?   @db.Time
-  isActive       Boolean     @default(true)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  zones          String[]  // Array of zone IDs
+  departureTime  String    // e.g., "07:30"
+  returnTime     String?   // e.g., "18:00"
+  days           String[]  // e.g., ["monday", "tuesday", ...]
+  notes          String?   @db.Text
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relations
-  bus            Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
-  transports     AthleteTransport[]
+  bus            Bus         @relation(fields: [busId], references: [id])
+  busAthletes    BusAthlete[]
+
+  @@index([busId])
 }
 
-model AthleteTransport {
-  id             String      @id @default(uuid())
-  athleteId      String      @unique
+// Bus Athlete Assignment
+model BusAthlete {
+  id             String    @id @default(uuid())
+  busId          String
+  athleteId      String
   busRouteId     String?
-  zoneId         String
-  pickupAddress  String?
-  pickupTime     DateTime?   @db.Time
-  isActive       Boolean     @default(true)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relations
-  athlete        Athlete     @relation(fields: [athleteId], references: [id], onDelete: Cascade)
-  busRoute       BusRoute?   @relation(fields: [busRouteId], references: [id])
-  zone           TransportZone @relation(fields: [zoneId], references: [id])
+  bus            Bus       @relation(fields: [busId], references: [id])
+  athlete        Athlete   @relation(fields: [athleteId], references: [id])
+  busRoute       BusRoute? @relation(fields: [busRouteId], references: [id])
+
+  @@unique([athleteId])
+  @@index([busId])
+  @@index([busRouteId])
 }
 
 model Notification {

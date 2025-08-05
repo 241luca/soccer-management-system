@@ -5,6 +5,23 @@ Tutte le modifiche significative al Soccer Management System sono documentate in
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.1.2] - 2025-08-05
+
+### 🐛 Risolto (Backend)
+- **Fix Permessi Admin**:
+  - Risolto errore 401 "Insufficient permissions" per ruolo Admin
+  - Il middleware ora normalizza i ruoli in uppercase (Admin/ADMIN/admin)
+  - Gli Admin possono ora modificare atleti correttamente
+
+- **API Trasporti Implementate**:
+  - Endpoint zone: GET/POST/PUT/DELETE /transport/zones
+  - Endpoint pulmini: GET/POST/PUT/DELETE /transport/buses  
+  - Assegnazione atleti: POST /transport/athletes/assign
+  - Rimozione atleti: DELETE /transport/athletes/:id/transport
+  - Statistiche: GET /transport/stats
+  - Validazione completa con Zod
+  - Autorizzazione per Admin e Coach
+
 ## [2.1.1] - 2025-08-05
 
 ### 🆕 Aggiunto

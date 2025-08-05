@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { AuthRequest } from '../types/auth.types';
 import { transportService } from '../services/transport.service';
@@ -34,7 +34,7 @@ const assignTransportSchema = z.object({
 // ZONES ROUTES
 
 // Get all zones
-router.get('/zones', async (req: AuthRequest, res: Response, next) => {
+router.get('/zones', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const zones = await transportService.getZones(req.user?.organizationId || '');
     res.json({ success: true, data: { zones } });
@@ -44,7 +44,7 @@ router.get('/zones', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Get single zone
-router.get('/zones/:id', async (req: AuthRequest, res: Response, next) => {
+router.get('/zones/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const zone = await transportService.getZoneById(req.params.id, req.user?.organizationId || '');
     res.json({ success: true, data: zone });
@@ -54,7 +54,7 @@ router.get('/zones/:id', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Create zone (admin/coach)
-router.post('/zones', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next) => {
+router.post('/zones', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = createZoneSchema.parse(req.body);
     const zone = await transportService.createZone({
@@ -71,7 +71,7 @@ router.post('/zones', authorize('Admin', 'Coach'), async (req: AuthRequest, res:
 });
 
 // Update zone (admin/coach)
-router.put('/zones/:id', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next) => {
+router.put('/zones/:id', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = createZoneSchema.partial().parse(req.body);
     const zone = await transportService.updateZone(
@@ -89,7 +89,7 @@ router.put('/zones/:id', authorize('Admin', 'Coach'), async (req: AuthRequest, r
 });
 
 // Delete zone (admin only)
-router.delete('/zones/:id', authorize('Admin'), async (req: AuthRequest, res: Response, next) => {
+router.delete('/zones/:id', authorize('Admin'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     await transportService.deleteZone(req.params.id, req.user?.organizationId || '');
     res.json({ success: true, message: 'Zone deleted successfully' });
@@ -101,7 +101,7 @@ router.delete('/zones/:id', authorize('Admin'), async (req: AuthRequest, res: Re
 // BUSES ROUTES
 
 // Get all buses
-router.get('/buses', async (req: AuthRequest, res: Response, next) => {
+router.get('/buses', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const buses = await transportService.getBuses(req.user?.organizationId || '');
     res.json({ success: true, data: { buses } });
@@ -111,7 +111,7 @@ router.get('/buses', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Get single bus
-router.get('/buses/:id', async (req: AuthRequest, res: Response, next) => {
+router.get('/buses/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const bus = await transportService.getBusById(req.params.id, req.user?.organizationId || '');
     res.json({ success: true, data: bus });
@@ -121,7 +121,7 @@ router.get('/buses/:id', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Create bus (admin/coach)
-router.post('/buses', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next) => {
+router.post('/buses', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = createBusSchema.parse(req.body);
     const bus = await transportService.createBus({
@@ -138,7 +138,7 @@ router.post('/buses', authorize('Admin', 'Coach'), async (req: AuthRequest, res:
 });
 
 // Update bus (admin/coach)
-router.put('/buses/:id', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next) => {
+router.put('/buses/:id', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = createBusSchema.partial().parse(req.body);
     const bus = await transportService.updateBus(
@@ -156,7 +156,7 @@ router.put('/buses/:id', authorize('Admin', 'Coach'), async (req: AuthRequest, r
 });
 
 // Delete bus (admin only)
-router.delete('/buses/:id', authorize('Admin'), async (req: AuthRequest, res: Response, next) => {
+router.delete('/buses/:id', authorize('Admin'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     await transportService.deleteBus(req.params.id, req.user?.organizationId || '');
     res.json({ success: true, message: 'Bus deleted successfully' });
@@ -168,7 +168,7 @@ router.delete('/buses/:id', authorize('Admin'), async (req: AuthRequest, res: Re
 // ATHLETE TRANSPORT
 
 // Assign athlete to transport
-router.post('/athletes/assign', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next) => {
+router.post('/athletes/assign', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = assignTransportSchema.parse(req.body);
     await transportService.assignAthleteTransport({
@@ -185,7 +185,7 @@ router.post('/athletes/assign', authorize('Admin', 'Coach'), async (req: AuthReq
 });
 
 // Remove athlete from transport
-router.delete('/athletes/:athleteId/transport', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next) => {
+router.delete('/athletes/:athleteId/transport', authorize('Admin', 'Coach'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     await transportService.removeAthleteTransport(
       req.params.athleteId,
@@ -198,7 +198,7 @@ router.delete('/athletes/:athleteId/transport', authorize('Admin', 'Coach'), asy
 });
 
 // Get transport statistics
-router.get('/stats', async (req: AuthRequest, res: Response, next) => {
+router.get('/stats', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const stats = await transportService.getTransportStats(req.user?.organizationId || '');
     res.json({ success: true, data: stats });
