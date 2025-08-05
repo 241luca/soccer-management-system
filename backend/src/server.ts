@@ -24,6 +24,10 @@ import dashboardRoutes from './routes/dashboard.routes';
 import adminRoutes from './routes/admin.routes';
 import organizationRoutes from './routes/organization.routes';
 import superAdminRoutes from './routes/super-admin.routes';
+import sponsorRoutes from './routes/sponsors.routes';
+import staffRoutes from './routes/staff.routes';
+import teamKitsRoutes from './routes/teamKits.routes';
+import organizationDocumentsRoutes from './routes/organizationDocuments.routes';
 
 // Import middleware
 import { errorHandler } from './middleware/error.middleware';
@@ -90,6 +94,10 @@ app.use(`${API_PREFIX}/transport`, transportRoutes);
 app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${API_PREFIX}/admin`, adminRoutes);
+app.use(`${API_PREFIX}`, sponsorRoutes); // Sponsor routes include their own path
+app.use(`${API_PREFIX}`, staffRoutes); // Staff routes include their own path
+app.use(`${API_PREFIX}`, teamKitsRoutes); // Team kits routes include their own path
+app.use(`${API_PREFIX}`, organizationDocumentsRoutes); // Organization documents routes
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

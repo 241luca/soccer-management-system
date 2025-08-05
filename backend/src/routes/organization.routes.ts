@@ -11,6 +11,7 @@ import {
 } from '../middleware/multi-tenant.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 import { z } from 'zod';
+import { validateOrganizationUpdate, handleValidationErrors } from '../validators/organization.validator';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -151,28 +152,123 @@ router.post('/current/logo',
   })
 );
 
-// Get organization details by ID (for super admin)
-router.get('/:organizationId/details',
+// Get organization details by ID (for super admin and owner with access)
+router.get('/:id/details',
   authenticate,
-  requireSuperAdmin,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const details = await organizationService.getOrganizationDetails(
-      req.params.organizationId
-    );
+    const { id } = req.params;
+    const user = req.user;
+    
+    // Check permissions
+    const isSuperAdmin = user?.role === 'SUPER_ADMIN' || req.headers['x-super-admin'] === 'true';
+    
+    if (!isSuperAdmin && user?.organizationId !== id && user?.role !== 'Owner') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Super admin access required',
+        code: 'SUPER_ADMIN_REQUIRED'
+      });
+    }
+    
+    // For Owner, verify they have access to this org
+    if (user?.role === 'Owner' && !isSuperAdmin) {
+      const hasAccess = await prisma.userOrganization.findFirst({
+        where: {
+          userId: user.id || user.userId,
+          organizationId: id,
+          role: {
+            name: 'Owner'
+          }
+        }
+      });
+      
+      if (!hasAccess) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'No access to this organization',
+          code: 'NO_ORG_ACCESS'
+        });
+      }
+    }
+    
+    const details = await organizationService.getOrganizationDetails(id);
     res.json(details);
   })
 );
 
-// Update organization details by ID (for super admin)
-router.patch('/:organizationId/details',
+// Update organization by ID (for super admin, admin and owner with access)
+router.put('/:id',
   authenticate,
-  requireSuperAdmin,
+  validateOrganizationUpdate,
+  handleValidationErrors,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const updated = await organizationService.updateOrganizationDetails(
-      req.params.organizationId,
-      req.body
-    );
-    res.json(updated);
+    const { id } = req.params;
+    const user = req.user;
+    const updateData = req.body;
+    
+    // Check permissions
+    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+    
+    // Super Admin can modify any organization
+    if (!isSuperAdmin) {
+      // Owner needs to have access to this specific organization
+      if (user?.role === 'Owner') {
+        const hasAccess = await prisma.userOrganization.findFirst({
+          where: {
+            userId: user.id || user.userId,
+            organizationId: id,
+            role: {
+              name: 'Owner'
+            }
+          }
+        });
+        
+        if (!hasAccess) {
+          return res.status(403).json({ 
+            error: 'Forbidden',
+            message: 'Insufficient permissions to modify this organization',
+            code: 'INSUFFICIENT_PERMISSIONS'
+          });
+        }
+      }
+      // Admin can only modify their own organization
+      else if (user?.role === 'Admin' && user.organizationId === id) {
+        // Admin can proceed
+      }
+      else {
+        return res.status(403).json({ 
+          error: 'Forbidden',
+          message: 'Insufficient permissions to modify this organization',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        });
+      }
+    }
+    
+    try {
+      // Remove fields that shouldn't be updated
+      delete updateData.id;
+      delete updateData.createdAt;
+      delete updateData.updatedAt;
+      delete updateData._count;
+      
+      const updated = await organizationService.updateOrganizationDetails(
+        id,
+        updateData
+      );
+      
+      res.json({
+        success: true,
+        data: updated
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        return res.status(400).json({
+          error: 'Duplicate Entry',
+          message: 'Organization code already exists'
+        });
+      }
+      throw error;
+    }
   })
 );
 

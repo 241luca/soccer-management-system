@@ -883,44 +883,15 @@ class OrganizationService {
   async getOrganizationDetails(organizationId: string) {
     const organization = await prisma.organization.findUnique({
       where: { id: organizationId },
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        logoUrl: true,
-        fullName: true,
-        address: true,
-        city: true,
-        province: true,
-        postalCode: true,
-        country: true,
-        phone: true,
-        email: true,
-        website: true,
-        fiscalCode: true,
-        vatNumber: true,
-        foundedYear: true,
-        federationNumber: true,
-        iban: true,
-        bankName: true,
-        primaryColor: true,
-        secondaryColor: true,
-        description: true,
-        presidentName: true,
-        presidentEmail: true,
-        presidentPhone: true,
-        secretaryName: true,
-        secretaryEmail: true,
-        secretaryPhone: true,
-        socialFacebook: true,
-        socialInstagram: true,
-        socialTwitter: true,
-        socialYoutube: true,
+      include: {
         _count: {
           select: {
+            teams: true,
             users: true,
             athletes: true,
-            teams: true
+            venues: true,
+            sponsors: true,
+            staffMembers: true
           }
         }
       }
