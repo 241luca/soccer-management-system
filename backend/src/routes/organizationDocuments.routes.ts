@@ -112,10 +112,11 @@ router.post('/organizations/:orgId/documents',
       const file = req.file;
       
       if (!file) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Bad Request',
           message: 'No file uploaded'
         });
+        return;
       }
       
       const documentData = {
@@ -180,10 +181,11 @@ router.get('/documents/:id/download',
       });
       
       if (!document) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Document not found'
         });
+        return;
       }
       
       // Check permissions - only organization members or if document is public
@@ -199,10 +201,11 @@ router.get('/documents/:id/download',
           });
           
           if (!hasAccess) {
-            return res.status(403).json({
+            res.status(403).json({
               error: 'Forbidden',
               message: 'No access to this document'
             });
+            return;
           }
         }
       }
@@ -212,10 +215,11 @@ router.get('/documents/:id/download',
       
       // Check if file exists
       if (!fs.existsSync(filePath)) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'File not found on server'
         });
+        return;
       }
       
       // Set appropriate headers
@@ -251,19 +255,21 @@ router.put('/documents/:id',
       });
       
       if (!document) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Document not found'
         });
+        return;
       }
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== document.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot modify document from another organization'
         });
+        return;
       }
       
       // Update only allowed fields
@@ -323,19 +329,21 @@ router.delete('/documents/:id',
       });
       
       if (!document) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Document not found'
         });
+        return;
       }
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== document.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot delete document from another organization'
         });
+        return;
       }
       
       // Delete from database
