@@ -1,33 +1,29 @@
 # Issues da risolvere
 
-## 1. Errore 401 - Insufficient permissions su update atleti
+## ✅ 1. Errore 401 - Insufficient permissions su update atleti [RISOLTO]
 
 **Problema**: Quando un utente con ruolo Admin prova a modificare un atleta, riceve errore 401 "Insufficient permissions"
 
-**Dettagli**:
-- User: admin@demosoccerclub.com
-- Role: Admin
-- Organization: Demo Club (43c973a6-5e20-43af-a295-805f1d7c86b1)
-- Endpoint: PUT /api/v1/athletes/:id
-- Headers inviate:
-  - Authorization: Bearer [token]
-  - X-Organization-ID: 43c973a6-5e20-43af-a295-805f1d7c86b1
-  - Content-Type: application/json
+**Causa**: Il middleware di autorizzazione confrontava i ruoli in modo case-sensitive. Il frontend invia "Admin" ma il backend si aspettava "ADMIN".
 
-**Possibili cause**:
-1. Il backend non riconosce il ruolo Admin per modificare atleti
-2. Manca un permesso specifico nel backend
-3. Il token non contiene i permessi corretti
-4. L'organizzazione non è associata correttamente all'utente
+**Soluzione implementata**: 
+- Modificato `auth.middleware.ts` per normalizzare i ruoli in uppercase prima del confronto
+- Ora sia "Admin" che "ADMIN" sono accettati
 
-**Soluzione temporanea**: 
-- Aggiunto logging per debug
-- Rimozione campi potenzialmente problematici dal payload
+## ✅ 2. API Trasporti non implementate [RISOLTO]
 
-**Da fare**:
-- Verificare nel backend i permessi del ruolo Admin
-- Controllare middleware di autorizzazione
-- Verificare che il token JWT contenga i permessi corretti
+**Problema**: Le API per zone e pulmini restituivano solo placeholder
+
+**Soluzione implementata**:
+- Implementato completamente `transport.routes.ts` con tutti gli endpoint:
+  - GET/POST/PUT/DELETE /transport/zones
+  - GET/POST/PUT/DELETE /transport/buses
+  - POST /transport/athletes/assign
+  - DELETE /transport/athletes/:id/transport
+  - GET /transport/stats
+- Utilizzato il servizio `transportService` già esistente
+- Aggiunta validazione con Zod
+- Autorizzazione corretta per Admin e Coach
 
 ## 2. API Documenti Atleti non implementate
 

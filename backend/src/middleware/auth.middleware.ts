@@ -61,7 +61,11 @@ export const authorize = (...allowedRoles: string[]) => {
     
     const userRole = req.user.role || req.user.organizationRole;
     
-    if (!userRole || !allowedRoles.includes(userRole)) {
+    // Normalize roles to uppercase for comparison
+    const normalizedUserRole = userRole?.toUpperCase();
+    const normalizedAllowedRoles = allowedRoles.map(role => role.toUpperCase());
+    
+    if (!normalizedUserRole || !normalizedAllowedRoles.includes(normalizedUserRole)) {
       return next(new UnauthorizedError('Insufficient permissions'));
     }
     
