@@ -277,6 +277,85 @@ router.put('/:id',
   })
 );
 
+// Update organization details by ID (PATCH) - for super admin and owner with access
+router.patch('/:id/details',
+  authenticate,
+  validateOrganizationUpdate,
+  handleValidationErrors,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const user = req.user;
+    const updateData = req.body;
+    
+    // Check permissions
+    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+    
+    // Super Admin can modify any organization
+    if (!isSuperAdmin) {
+      // Owner needs to have access to this specific organization
+      if (user?.role === 'Owner') {
+        const hasAccess = await prisma.userOrganization.findFirst({
+          where: {
+            userId: user.id || user.userId,
+            organizationId: id,
+            role: {
+              name: 'Owner'
+            }
+          }
+        });
+        
+        if (!hasAccess) {
+          res.status(403).json({ 
+            error: 'Forbidden',
+            message: 'Insufficient permissions to modify this organization',
+            code: 'INSUFFICIENT_PERMISSIONS'
+          });
+          return;
+        }
+      }
+      // Admin can only modify their own organization
+      else if (user?.role === 'Admin' && user.organizationId === id) {
+        // Admin can proceed
+      }
+      else {
+        res.status(403).json({ 
+          error: 'Forbidden',
+          message: 'Insufficient permissions to modify this organization',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        });
+        return;
+      }
+    }
+    
+    try {
+      // Remove fields that shouldn't be updated
+      delete updateData.id;
+      delete updateData.createdAt;
+      delete updateData.updatedAt;
+      delete updateData._count;
+      
+      const updated = await organizationService.updateOrganizationDetails(
+        id,
+        updateData
+      );
+      
+      res.json({
+        success: true,
+        data: updated
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        res.status(400).json({
+          error: 'Duplicate Entry',
+          message: 'Organization code already exists'
+        });
+        return;
+      }
+      throw error;
+    }
+  })
+);
+
 // User management
 router.get('/users',
   extractOrganization,

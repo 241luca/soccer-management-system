@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Backend ora si avvia correttamente
   - Risolti tutti gli errori di compilazione TypeScript
   - Il server ora parte sulla porta 3000 (o su altra porta se specificata in .env)
+- 🔧 Aggiunta route mancante per aggiornare i dettagli dell'organizzazione
+  - Aggiunta route PATCH /api/v1/organizations/:id/details per permettere l'aggiornamento dei dettagli dell'organizzazione dal frontend
 
 ## [2.1.0] - 2025-08-04
 
