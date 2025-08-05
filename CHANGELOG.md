@@ -12,9 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Il modulo compression era importato in server.ts ma non presente in package.json
   - Il modulo uuid era importato in auth.service.ts ma non presente in package.json
   - Aggiunti `compression`, `@types/compression`, `uuid` e `@types/uuid` come dipendenze
-- 🐛 Corretti errori TypeScript nel file organization.routes.ts
-  - Risolti errori TS7030 dove non tutti i percorsi del codice restituivano un valore
-  - Modificati i return nelle funzioni asyncHandler per essere compatibili con TypeScript
+- 🐛 Corretti errori TypeScript nei file del backend
+  - Risolti errori TS7030 in organization.routes.ts dove non tutti i percorsi del codice restituivano un valore
+  - Corretto stesso errore in organization.validator.ts nella funzione handleValidationErrors
+  - Modificati i return nelle funzioni per essere compatibili con TypeScript
 
 ## [2.1.0] - 2025-08-04
 
