@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🐛 Corretti errori TypeScript nei file del backend
   - Risolti errori TS7030 in organization.routes.ts dove non tutti i percorsi del codice restituivano un valore
   - Corretto stesso errore in organization.validator.ts nella funzione handleValidationErrors
+  - Corretto stesso errore in sponsors.routes.ts nelle funzioni PUT e DELETE
   - Modificati i return nelle funzioni per essere compatibili con TypeScript
 
 ## [2.1.0] - 2025-08-04

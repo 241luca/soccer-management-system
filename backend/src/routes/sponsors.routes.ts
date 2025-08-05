@@ -112,19 +112,21 @@ router.put('/sponsors/:id',
       });
       
       if (!sponsor) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Sponsor not found'
         });
+        return;
       }
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== sponsor.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot modify sponsor from another organization'
         });
+        return;
       }
       
       const updated = await prisma.sponsor.update({
@@ -160,19 +162,21 @@ router.delete('/sponsors/:id',
       });
       
       if (!sponsor) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Sponsor not found'
         });
+        return;
       }
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== sponsor.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot delete sponsor from another organization'
         });
+        return;
       }
       
       // Soft delete - just set isActive to false
