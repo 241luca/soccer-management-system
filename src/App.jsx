@@ -37,7 +37,7 @@ const SoccerManagementApp = () => {
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   
-  const { data, loading, stats, notifications, toast } = useData();
+  const { data, loading, stats, notifications, toast, addAthlete, updateAthlete, deleteAthlete, refreshData } = useData();
 
   // Funzione per caricare l'organizzazione di default per Super Admin
   const loadDefaultOrganization = async () => {
@@ -230,6 +230,10 @@ const SoccerManagementApp = () => {
             setSearchTerm={setSearchTerm}
             notifications={notifications}
             toast={toast}
+            addAthlete={addAthlete}
+            updateAthlete={updateAthlete}
+            deleteAthlete={deleteAthlete}
+            refreshData={refreshData}
           />
         );
       case 'matches':

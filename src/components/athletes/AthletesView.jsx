@@ -5,7 +5,7 @@ import StatusBadge from '../common/StatusBadge';
 import AthleteModal from './AthleteModal';
 import ExportButton from '../export/ExportButton';
 
-const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, toast }) => {
+const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, toast, addAthlete, updateAthlete, deleteAthlete, refreshData }) => {
   const [selectedAthlete, setSelectedAthlete] = useState(null);
   const [showAthleteModal, setShowAthleteModal] = useState(false);
   const [filters, setFilters] = useState({
@@ -437,15 +437,35 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
         <AthleteModal
           athlete={selectedAthlete}
           data={data}
+          toast={toast}
           onClose={() => {
             setShowAthleteModal(false);
             setSelectedAthlete(null);
           }}
-          onSave={(athleteData) => {
-            // TODO: Implementare salvataggio
-            console.log('Saving athlete:', athleteData);
-            setShowAthleteModal(false);
-            setSelectedAthlete(null);
+          onSave={async (athleteData) => {
+            try {
+              if (selectedAthlete) {
+                // Modifica atleta esistente
+                await updateAthlete(selectedAthlete.id, athleteData);
+                toast.showSuccess('Atleta aggiornata con successo!');
+              } else {
+                // Nuova atleta
+                await addAthlete(athleteData);
+                toast.showSuccess('Atleta aggiunta con successo!');
+              }
+              
+              // Chiudi il modal
+              setShowAthleteModal(false);
+              setSelectedAthlete(null);
+              
+              // Aggiorna i dati
+              if (refreshData) {
+                await refreshData();
+              }
+            } catch (error) {
+              console.error('Error saving athlete:', error);
+              toast.showError(error.message || 'Errore nel salvataggio');
+            }
           }}
         />
       )}

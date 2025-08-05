@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, User, Calendar, MapPin, Phone, Mail, CreditCard, FileText, Bus, Award } from 'lucide-react';
 import StatusBadge from '../common/StatusBadge';
+import AthleteDocuments from './AthleteDocuments';
 
-const AthleteModal = ({ athlete, data, onClose, onSave }) => {
+const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -65,7 +66,33 @@ const AthleteModal = ({ athlete, data, onClose, onSave }) => {
   };
 
   const handleSubmit = () => {
-    onSave(formData);
+    // Validazione base
+    if (!formData.firstName || !formData.lastName) {
+      alert('Nome e cognome sono obbligatori');
+      return;
+    }
+    
+    if (!formData.age || formData.age < 10 || formData.age > 40) {
+      alert('L\'età deve essere tra 10 e 40 anni');
+      return;
+    }
+    
+    if (!formData.teamId) {
+      alert('Seleziona una squadra');
+      return;
+    }
+    
+    // Prepara i dati per il salvataggio
+    const dataToSave = {
+      ...formData,
+      age: parseInt(formData.age),
+      teamId: parseInt(formData.teamId),
+      number: formData.number ? parseInt(formData.number) : null,
+      membershipFee: parseFloat(formData.membershipFee) || 0,
+      busFee: parseFloat(formData.busFee) || 0
+    };
+    
+    onSave(dataToSave);
   };
 
   const getDocumentStatus = () => {
@@ -390,86 +417,11 @@ const AthleteModal = ({ athlete, data, onClose, onSave }) => {
 
           {/* Tab Documenti */}
           {activeTab === 'documents' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">Certificato Medico</h4>
-                    {athlete && (
-                      <StatusBadge status={getDocumentStatus()}>
-                        {getDocumentStatus() === 'warning' ? 'In scadenza' : 'Valido'}
-                      </StatusBadge>
-                    )}
-                  </div>
-                  
-                  {isEditing ? (
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-2">Data scadenza</label>
-                      <input
-                        type="date"
-                        value={formData.medicalExpiry}
-                        onChange={(e) => handleChange('medicalExpiry', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  ) : athlete ? (
-                    <div>
-                      <p className="text-sm text-gray-600">Scadenza:</p>
-                      <p className="font-medium">{formatDate(athlete.medicalExpiry)}</p>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">Assicurazione</h4>
-                    {athlete && (
-                      <StatusBadge status={getDocumentStatus()}>
-                        {getDocumentStatus() === 'warning' ? 'In scadenza' : 'Valida'}
-                      </StatusBadge>
-                    )}
-                  </div>
-                  
-                  {isEditing ? (
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-2">Data scadenza</label>
-                      <input
-                        type="date"
-                        value={formData.insuranceExpiry}
-                        onChange={(e) => handleChange('insuranceExpiry', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  ) : athlete ? (
-                    <div>
-                      <p className="text-sm text-gray-600">Scadenza:</p>
-                      <p className="font-medium">{formatDate(athlete.insuranceExpiry)}</p>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              {athlete && !athlete.isAgeValid && (
-                <div className="bg-orange-50 border-l-4 border-orange-400 p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <Calendar className="h-5 w-5 text-orange-400" />
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-orange-800">
-                        Attenzione: Età non conforme
-                      </h3>
-                      <div className="mt-2 text-sm text-orange-700">
-                        <p>L'atleta ha {athlete.age} anni e non rientra nella fascia {data.teams.find(t => t.id === athlete.teamId)?.minAge}-{data.teams.find(t => t.id === athlete.teamId)?.maxAge} anni della squadra {athlete.teamName}.</p>
-                        {athlete.suggestedTeam && (
-                          <p className="mt-1 font-medium">Squadra consigliata: {athlete.suggestedTeam}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <AthleteDocuments
+              athleteId={athlete?.id}
+              isEditing={isEditing}
+              toast={toast}
+            />
           )}
 
           {/* Tab Pagamenti */}
