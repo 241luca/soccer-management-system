@@ -72,20 +72,22 @@ router.get('/staff/:id',
       });
       
       if (!staff) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Staff member not found'
         });
+        return;
       }
       
       // Check permissions
       const user = req.user;
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== staff.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot access staff from another organization'
         });
+        return;
       }
       
       res.json(staff);
@@ -146,45 +148,50 @@ router.put('/staff/:id',
       });
       
       if (!existingStaff) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Staff member not found'
         });
+        return;
       }
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== existingStaff.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot modify staff from another organization'
         });
+        return;
       }
       
       // Validate salary if provided
       if (updateData.salary !== undefined && updateData.salary < 0) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation Error',
           message: 'Salary cannot be negative'
         });
+        return;
       }
       
       // Validate contractType if provided
       const validContractTypes = ['full-time', 'part-time', 'volunteer', 'consultant'];
       if (updateData.contractType && !validContractTypes.includes(updateData.contractType)) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation Error',
           message: 'Invalid contract type'
         });
+        return;
       }
       
       // Validate paymentFrequency if provided
       const validPaymentFrequencies = ['monthly', 'weekly', 'hourly', 'per-event'];
       if (updateData.paymentFrequency && !validPaymentFrequencies.includes(updateData.paymentFrequency)) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation Error',
           message: 'Invalid payment frequency'
         });
+        return;
       }
       
       const staff = await prisma.staffMember.update({
@@ -223,19 +230,21 @@ router.delete('/staff/:id',
       });
       
       if (!staff) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Staff member not found'
         });
+        return;
       }
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== staff.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot delete staff from another organization'
         });
+        return;
       }
       
       // Soft delete
