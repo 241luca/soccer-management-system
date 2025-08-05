@@ -378,6 +378,26 @@
                         pg_dump -U lucamambelli soccer_management > backup_$(date +%Y%m%d_%H%M%S).sql
                         <div class="description">Backup completo database</div>
                     </div>
+                    <div class="command" onclick="copyCommand(this)">
+                        cd /Users/lucamambelli/Desktop/soccer-management-system && psql -U lucamambelli -d soccer_management -f verify-complete-population.sql
+                        <div class="description">Verifica popolamento database (conteggi e statistiche)</div>
+                    </div>
+                </div>
+
+                <div class="command-group">
+                    <h3>Script Popolamento Database</h3>
+                    <div class="command" onclick="copyCommand(this)">
+                        cd /Users/lucamambelli/Desktop/soccer-management-system && psql -U lucamambelli -d soccer_management -f 01-create-ravenna-teams-fixed.sql
+                        <div class="description">Crea squadre per ASD Ravenna</div>
+                    </div>
+                    <div class="command" onclick="copyCommand(this)">
+                        cd /Users/lucamambelli/Desktop/soccer-management-system && psql -U lucamambelli -d soccer_management -f 02-insert-all-athletes.sql
+                        <div class="description">Inserisce atleti per entrambe le organizzazioni</div>
+                    </div>
+                    <div class="command" onclick="copyCommand(this)">
+                        cd /Users/lucamambelli/Desktop/soccer-management-system && psql -U lucamambelli -d soccer_management -f 03-create-ravenna-admin.sql
+                        <div class="description">Crea utente admin per ASD Ravenna</div>
+                    </div>
                 </div>
 
                 <div class="command-group">
@@ -522,6 +542,10 @@
                         kill -9 $(lsof -t -i:3000)
                         <div class="description">Termina processo backend</div>
                     </div>
+                    <div class="command" onclick="copyCommand(this)">
+                        /Users/lucamambelli/Desktop/soccer-management-system/close-all-terminals.sh
+                        <div class="description">Chiudi tutti i terminali aperti</div>
+                    </div>
                 </div>
 
                 <div class="command-group">
@@ -551,8 +575,12 @@
                         <div class="description">Setup database iniziale</div>
                     </div>
                     <div class="command" onclick="copyCommand(this)">
-                        cd /Users/lucamambelli/Desktop/soccer-management-system/backend && node scripts/seed.js
-                        <div class="description">Popola database con dati demo</div>
+                        cd /Users/lucamambelli/Desktop/soccer-management-system && psql -U lucamambelli -d soccer_management -f 05-add-missing-columns.sql
+                        <div class="description">Aggiunge colonne mancanti alle tabelle</div>
+                    </div>
+                    <div class="command" onclick="copyCommand(this)">
+                        cd /Users/lucamambelli/Desktop/soccer-management-system && psql -U lucamambelli -d soccer_management -f 06-final-population.sql
+                        <div class="description">Popola database completo con dati demo (2 organizzazioni)</div>
                     </div>
                 </div>
 
@@ -616,6 +644,10 @@
                 <div class="command" onclick="copyCommand(this)">
                     open /Users/lucamambelli/Desktop/soccer-management-system/docs/TECHNICAL.md
                     <div class="description">Apri documentazione tecnica</div>
+                </div>
+                <div class="command" onclick="copyCommand(this)">
+                    open /Users/lucamambelli/Desktop/soccer-management-system/docs/DATABASE.md
+                    <div class="description">Documentazione database completa</div>
                 </div>
                 <div class="command" onclick="copyCommand(this)">
                     open /Users/lucamambelli/Desktop/soccer-management-system/docs/features/ORGANIZATION-DETAILS.md
