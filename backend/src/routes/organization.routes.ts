@@ -159,8 +159,8 @@ router.get('/:id/details',
     const { id } = req.params;
     const user = req.user;
     
-    // Check permissions
-    const isSuperAdmin = user?.role === 'SUPER_ADMIN' || req.headers['x-super-admin'] === 'true';
+    // Check permissions - check both role and isSuperAdmin flag
+    const isSuperAdmin = user?.isSuperAdmin || user?.role === 'SUPER_ADMIN' || req.headers['x-super-admin'] === 'true';
     
     if (!isSuperAdmin && user?.organizationId !== id && user?.role !== 'Owner') {
       res.status(403).json({
@@ -209,7 +209,7 @@ router.put('/:id',
     const updateData = req.body;
     
     // Check permissions
-    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+    const isSuperAdmin = user?.isSuperAdmin || user?.role === 'SUPER_ADMIN';
     
     // Super Admin can modify any organization
     if (!isSuperAdmin) {
@@ -288,7 +288,7 @@ router.patch('/:id/details',
     const updateData = req.body;
     
     // Check permissions
-    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+    const isSuperAdmin = user?.isSuperAdmin || user?.role === 'SUPER_ADMIN';
     
     // Super Admin can modify any organization
     if (!isSuperAdmin) {
