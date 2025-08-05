@@ -170,6 +170,11 @@ class ApiClient {
   async updateAthlete(id, data) {
     console.log('updateAthlete called with:', { id, data });
     
+    // Log per debug dettagliato
+    console.log('Data ricevuti:', data);
+    console.log('birthDate presente?', data.birthDate);
+    console.log('birthDate include T?', data.birthDate && data.birthDate.includes('T'));
+    
     // Converti i dati dal formato frontend al formato backend
     const cleanData = { ...data };
     
@@ -206,7 +211,8 @@ class ApiClient {
     
     // Rimuovi campi legacy del frontend
     const fieldsToRemove = ['membershipFee', 'feeStatus', 'medicalExpiry', 'insuranceExpiry', 
-                           'busFee', 'busFeeStatus', 'gamesPlayed', 'goals', 'yellowCards', 'redCards'];
+                           'busFee', 'busFeeStatus', 'gamesPlayed', 'goals', 'yellowCards', 'redCards',
+                           'position']; // position deve essere positionId
     fieldsToRemove.forEach(field => delete cleanData[field]);
     
     // Rimuovi campi vuoti o null
@@ -217,6 +223,7 @@ class ApiClient {
     });
     
     console.log('Clean data to send:', cleanData);
+    console.log('Clean data JSON:', JSON.stringify(cleanData, null, 2));
     
     return this.request(`/athletes/${id}`, {
       method: 'PUT',
