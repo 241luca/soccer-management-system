@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 import { organizationService } from '../services/organization.service';
 import { 
   authenticate,
@@ -12,6 +13,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { z } from 'zod';
 
 const router = Router();
+const prisma = new PrismaClient();
 
 // Validation schemas
 const createOrgSchema = z.object({
@@ -29,6 +31,38 @@ const inviteUserSchema = z.object({
   email: z.string().email(),
   roleId: z.string().uuid()
 });
+
+// Super admin: list all organizations
+router.get('/',
+  authenticate,
+  requireSuperAdmin,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const organizations = await prisma.organization.findMany({
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        logoUrl: true,
+        plan: true,
+        isActive: true,
+        subdomain: true,
+        createdAt: true,
+        _count: {
+          select: {
+            users: true,
+            athletes: true,
+            teams: true
+          }
+        }
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    res.json(organizations);
+  })
+);
 
 // Public routes
 router.get('/check-availability/:identifier', asyncHandler(async (req: AuthRequest, res: Response) => {

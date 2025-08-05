@@ -12,14 +12,19 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { useApiData } from '../../hooks/useApiData';
 import { api } from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
 const OrganizationList = ({ onNavigate }) => {
-  const { data: organizations, loading, error, refetch } = useApiData('/organizations');
+  const [organizations, setOrganizations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showDropdown, setShowDropdown] = useState(null);
+
+  useEffect(() => {
+    loadOrganizations();
+  }, []);
 
   // Chiudi dropdown quando si clicca fuori
   useEffect(() => {
@@ -32,13 +37,31 @@ const OrganizationList = ({ onNavigate }) => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  const loadOrganizations = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get('/organizations');
+      console.log('Organizations response:', response);
+      
+      // Assicurati che sia un array
+      const orgs = Array.isArray(response) ? response : response.data || [];
+      setOrganizations(orgs);
+    } catch (error) {
+      console.error('Error loading organizations:', error);
+      setError(error.message || 'Errore nel caricamento delle organizzazioni');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getPlanBadgeColor = (plan) => {
     switch (plan) {
-      case 'Enterprise':
+      case 'enterprise':
         return 'bg-purple-100 text-purple-800';
-      case 'Pro':
+      case 'pro':
         return 'bg-blue-100 text-blue-800';
-      case 'Basic':
+      case 'basic':
         return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -73,7 +96,7 @@ const OrganizationList = ({ onNavigate }) => {
   };
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error.message} />;
+  if (error) return <ErrorMessage message={error} />;
 
   return (
     <div className="space-y-6">
@@ -94,7 +117,7 @@ const OrganizationList = ({ onNavigate }) => {
 
       {/* Organizations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {organizations?.map((org) => (
+        {organizations.map((org) => (
           <div
             key={org.id}
             className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
@@ -172,7 +195,7 @@ const OrganizationList = ({ onNavigate }) => {
                     Utenti
                   </span>
                   <span className="text-sm font-medium">
-                    {org.userCount || 0}/{org.maxUsers || '∞'}
+                    {org._count?.users || 0}/{org.maxUsers || '∞'}
                   </span>
                 </div>
 
@@ -211,7 +234,7 @@ const OrganizationList = ({ onNavigate }) => {
       </div>
 
       {/* Empty State */}
-      {organizations?.length === 0 && (
+      {organizations.length === 0 && !loading && (
         <div className="text-center py-12">
           <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900">Nessuna organizzazione</h3>

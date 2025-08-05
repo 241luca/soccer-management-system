@@ -51,11 +51,15 @@ const SoccerManagementApp = () => {
         api.setToken(token);
         console.log('User loaded:', userData);
         
-        // Load organization if available
-        if (storedOrganization) {
+        // Load organization if available and not Super Admin
+        if (storedOrganization && userData.role !== 'SUPER_ADMIN' && !userData.isSuperAdmin) {
           const orgData = JSON.parse(storedOrganization);
           setOrganization(orgData);
           console.log('Organization loaded:', orgData);
+        } else if (userData.role === 'SUPER_ADMIN' || userData.isSuperAdmin) {
+          // Clear organization for Super Admin
+          localStorage.removeItem('organization');
+          setOrganization(null);
         }
       } catch (error) {
         console.error('Error parsing user data:', error);

@@ -81,6 +81,41 @@ router.get('/organizations', authenticate, async (req: AuthRequest, res, next) =
   }
 });
 
+// Get user organizations
+router.get('/user-organizations',
+  authenticate,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id || req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const userOrgs = await prisma.userOrganization.findMany({
+      where: { userId },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            logoUrl: true,
+            plan: true
+          }
+        },
+        role: true
+      }
+    });
+
+    const organizations = userOrgs.map(uo => ({
+      ...uo.organization,
+      role: uo.role.name,
+      isDefault: uo.isDefault
+    }));
+
+    res.json(organizations);
+  })
+);
+
 // Switch organization
 router.post('/switch-organization', authenticate, async (req: AuthRequest, res, next) => {
   try {
