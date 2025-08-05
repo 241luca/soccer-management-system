@@ -5,6 +5,15 @@ Tutte le modifiche significative al Soccer Management System sono documentate in
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.0.3] - 2025-08-05
+
+### 🐛 Risolto
+- **Fix TypeError in AthletesView**: Corretto errore "Cannot read properties of undefined"
+  - Gestito correttamente campi firstName/lastName separati invece di name
+  - Aggiunto controlli null-safe per tutti i campi
+  - Fix applicato sia alla vista tabella che schede
+  - Migliorata ricerca per gestire tutti i formati nome
+
 ## [2.0.2] - 2025-08-05
 
 ### 🐛 Risolto

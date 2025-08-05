@@ -5,7 +5,9 @@ import StatusBadge from '../common/StatusBadge';
 
 const AthleteModal = ({ athlete, data, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
+    name: '', // Backward compatibility
     age: '',
     teamId: '',
     position: 'Centrocampista',
@@ -30,7 +32,9 @@ const AthleteModal = ({ athlete, data, onClose, onSave }) => {
   useEffect(() => {
     if (athlete) {
       setFormData({
-        name: athlete.name || '',
+        firstName: athlete.firstName || '',
+        lastName: athlete.lastName || '',
+        name: athlete.name || `${athlete.firstName || ''} ${athlete.lastName || ''}`.trim(),
         age: athlete.age || '',
         teamId: athlete.teamId || '',
         position: athlete.position || 'Centrocampista',
@@ -94,11 +98,16 @@ const AthleteModal = ({ athlete, data, onClose, onSave }) => {
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
-                {athlete ? athlete.name.charAt(0) : '?'}
+                {athlete ? ((athlete.firstName || athlete.name || '?').charAt(0).toUpperCase()) : '?'}
               </div>
               <div>
                 <h2 className="text-2xl font-bold">
-                  {athlete ? athlete.name : 'Nuova Atleta'}
+                  {athlete 
+                    ? (athlete.firstName && athlete.lastName 
+                        ? `${athlete.firstName} ${athlete.lastName}`
+                        : athlete.name || 'Atleta')
+                    : 'Nuova Atleta'
+                  }
                 </h2>
                 {athlete && (
                   <div className="flex items-center gap-4 mt-2 text-blue-100">
@@ -172,20 +181,40 @@ const AthleteModal = ({ athlete, data, onClose, onSave }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nome Completo *
+                    Nome *
                   </label>
                   {isEditing ? (
                     <input
                       type="text"
-                      value={formData.name}
-                      onChange={(e) => handleChange('name', e.target.value)}
+                      value={formData.firstName}
+                      onChange={(e) => handleChange('firstName', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Nome e cognome"
+                      placeholder="Nome"
                     />
                   ) : (
-                    <p className="text-gray-900">{athlete?.name}</p>
+                    <p className="text-gray-900">{athlete?.firstName || ''}</p>
                   )}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cognome *
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) => handleChange('lastName', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Cognome"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{athlete?.lastName || ''}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
