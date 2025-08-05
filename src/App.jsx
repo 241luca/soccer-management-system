@@ -119,6 +119,31 @@ const SoccerManagementApp = () => {
     toast.showInfo('Logout effettuato con successo');
   };
 
+  const handleChangeOrganization = async (orgId) => {
+    try {
+      // Carica i dettagli dell'organizzazione
+      const response = await api.get(`/organizations/${orgId}/details`);
+      const orgData = response.data || response;
+      
+      // Aggiorna il contesto
+      const newOrg = {
+        id: orgData.id,
+        name: orgData.name,
+        code: orgData.code
+      };
+      
+      setOrganization(newOrg);
+      localStorage.setItem('organization', JSON.stringify(newOrg));
+      
+      // Torna alle impostazioni
+      setCurrentView('settings');
+      toast.showSuccess(`Ora stai lavorando con: ${newOrg.name}`);
+    } catch (error) {
+      console.error('Error changing organization:', error);
+      toast.showError('Errore nel cambio organizzazione');
+    }
+  };
+
   const handleViewChange = (view) => {
     console.log('Changing view to:', view);
     if (view === 'change-password') {
@@ -248,6 +273,7 @@ const SoccerManagementApp = () => {
               }
               setCurrentView(view);
             }}
+            onSelectOrganization={user?.role === 'SUPER_ADMIN' || user?.isSuperAdmin ? handleChangeOrganization : null}
           />
         );
       case 'organizations-new':

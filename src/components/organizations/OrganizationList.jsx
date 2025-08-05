@@ -16,7 +16,7 @@ import { api } from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
-const OrganizationList = ({ onNavigate }) => {
+const OrganizationList = ({ onNavigate, onSelectOrganization }) => {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -83,20 +83,12 @@ const OrganizationList = ({ onNavigate }) => {
   };
 
   const handleViewDetails = (orgId) => {
-    // Per Super Admin, imposta l'organizzazione selezionata e vai all'anagrafica
-    if (onNavigate) {
-      // Carica i dettagli dell'organizzazione selezionata
-      const selectedOrg = organizations.find(org => org.id === orgId);
-      if (selectedOrg) {
-        // Aggiorna l'organizzazione nel localStorage
-        localStorage.setItem('organization', JSON.stringify({
-          id: selectedOrg.id,
-          name: selectedOrg.name,
-          code: selectedOrg.code
-        }));
-        // Ricarica la pagina per aggiornare il contesto
-        window.location.reload();
-      }
+    // Se è Super Admin e vuole cambiare organizzazione
+    if (onSelectOrganization) {
+      onSelectOrganization(orgId);
+    } else if (onNavigate) {
+      // Altrimenti naviga all'anagrafica
+      onNavigate('organization-details', { orgId });
     }
   };
 
