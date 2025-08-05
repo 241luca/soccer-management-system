@@ -15,7 +15,14 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  Users,
+  FileText,
+  Plus,
+  Edit2,
+  Trash2,
+  Home,
+  Shirt
 } from 'lucide-react';
 import { api } from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -240,7 +247,11 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
     { id: 'contacts', label: 'Contatti', icon: Contact },
     { id: 'legal', label: 'Dati Legali', icon: Shield },
     { id: 'appearance', label: 'Aspetto', icon: Palette },
-    { id: 'social', label: 'Social Media', icon: Share2 }
+    { id: 'social', label: 'Social Media', icon: Share2 },
+    { id: 'facilities', label: 'Strutture', icon: Building2 },
+    { id: 'kits', label: 'Maglie', icon: Palette },
+    { id: 'staff', label: 'Staff', icon: Users },
+    { id: 'documents', label: 'Documenti', icon: FileText }
   ];
 
   return (
@@ -545,6 +556,169 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'facilities' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <Home className="h-5 w-5 mr-2" />
+                Strutture Sportive
+              </h3>
+              {canEdit && (
+                <button className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Aggiungi Struttura
+                </button>
+              )}
+            </div>
+            
+            {/* Placeholder per lista strutture */}
+            <div className="text-center py-8 text-gray-500">
+              <Home className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              <p>Nessuna struttura registrata</p>
+              <p className="text-sm mt-1">Aggiungi le strutture sportive utilizzate dalla società</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'kits' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <Shirt className="h-5 w-5 mr-2" />
+                Maglie e Divise
+              </h3>
+              {canEdit && (
+                <button className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Aggiungi Maglia
+                </button>
+              )}
+            </div>
+            
+            {/* Placeholder per lista maglie */}
+            <div className="text-center py-8 text-gray-500">
+              <Shirt className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              <p>Nessuna maglia registrata</p>
+              <p className="text-sm mt-1">Aggiungi le maglie e divise ufficiali delle squadre</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'staff' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <Users className="h-5 w-5 mr-2" />
+                Staff Tecnico e Dirigenziale
+              </h3>
+              {canEdit && (
+                <button className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Aggiungi Membro Staff
+                </button>
+              )}
+            </div>
+            
+            {/* Staff esistente dal database */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Presidente */}
+              {formData.presidentName && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{formData.presidentName}</h4>
+                      <p className="text-sm text-gray-600">Presidente</p>
+                      {formData.presidentEmail && (
+                        <p className="text-sm text-gray-500 mt-1">{formData.presidentEmail}</p>
+                      )}
+                      {formData.presidentPhone && (
+                        <p className="text-sm text-gray-500">{formData.presidentPhone}</p>
+                      )}
+                    </div>
+                    <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Dirigenza</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Segretario */}
+              {formData.secretaryName && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{formData.secretaryName}</h4>
+                      <p className="text-sm text-gray-600">Segretario</p>
+                      {formData.secretaryEmail && (
+                        <p className="text-sm text-gray-500 mt-1">{formData.secretaryEmail}</p>
+                      )}
+                      {formData.secretaryPhone && (
+                        <p className="text-sm text-gray-500">{formData.secretaryPhone}</p>
+                      )}
+                    </div>
+                    <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Dirigenza</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Placeholder per altri membri staff */}
+            {!formData.presidentName && !formData.secretaryName && (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <p>Nessun membro dello staff registrato</p>
+                <p className="text-sm mt-1">Aggiungi allenatori, dirigenti e staff tecnico</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'documents' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Documenti Societari
+              </h3>
+              {canEdit && (
+                <button className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm">
+                  <Upload className="h-4 w-4 mr-1" />
+                  Carica Documento
+                </button>
+              )}
+            </div>
+            
+            {/* Categorie documenti */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <FileText className="h-8 w-8 mx-auto mb-2 text-gray-600" />
+                <p className="text-sm font-medium">Statuto</p>
+                <p className="text-xs text-gray-500">0 documenti</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <FileText className="h-8 w-8 mx-auto mb-2 text-gray-600" />
+                <p className="text-sm font-medium">Bilanci</p>
+                <p className="text-xs text-gray-500">0 documenti</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <FileText className="h-8 w-8 mx-auto mb-2 text-gray-600" />
+                <p className="text-sm font-medium">Verbali</p>
+                <p className="text-xs text-gray-500">0 documenti</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <FileText className="h-8 w-8 mx-auto mb-2 text-gray-600" />
+                <p className="text-sm font-medium">Certificati</p>
+                <p className="text-xs text-gray-500">0 documenti</p>
+              </div>
+            </div>
+            
+            {/* Placeholder per lista documenti */}
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              <p>Nessun documento caricato</p>
+              <p className="text-sm mt-1">Carica statuto, bilanci, verbali e altri documenti societari</p>
             </div>
           </div>
         )}

@@ -125,6 +125,9 @@ model Organization {
   roles        Role[]
   invitations  OrganizationInvitation[]
   userOrganizations UserOrganization[]
+  teamKits     TeamKit[]
+  staffMembers StaffMember[]
+  organizationDocuments OrganizationDocument[]
   
   @@index([fiscalCode])
   @@index([vatNumber])
@@ -155,6 +158,7 @@ model User {
   auditLogs        AuditLog[]
   userOrganizations UserOrganization[]
   sentInvitations  OrganizationInvitation[]
+  uploadedOrgDocuments OrganizationDocument[]
   
   @@index([organizationId])
   @@index([email])
@@ -178,6 +182,8 @@ model Team {
   athletes       Athlete[]
   homeMatches    Match[]      @relation("HomeTeam")
   awayMatches    Match[]      @relation("AwayTeam")
+  teamKits       TeamKit[]
+  staffMembers   StaffMember[]
 
   @@unique([organizationId, name, season])
   @@index([organizationId])
@@ -653,4 +659,85 @@ model OrganizationInvitation {
   @@index([organizationId])
   @@index([email])
   @@index([token])
+}
+
+// Team Kit (Maglie)
+model TeamKit {
+  id             String   @id @default(uuid())
+  organizationId String
+  teamId         String?
+  season         String
+  kitType        String   // home, away, third, goalkeeper
+  primaryColor   String
+  secondaryColor String?
+  tertiaryColor  String?
+  pattern        String?  // solid, stripes, hoops, etc
+  manufacturer   String?
+  sponsor        String?
+  imageUrl       String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  team           Team?        @relation(fields: [teamId], references: [id])
+
+  @@index([organizationId])
+  @@index([teamId])
+  @@index([season])
+}
+
+// Staff Member
+model StaffMember {
+  id             String    @id @default(uuid())
+  organizationId String
+  teamId         String?
+  firstName      String
+  lastName       String
+  role           String    // coach, assistant, physio, manager, etc
+  email          String?
+  phone          String?
+  photoUrl       String?
+  qualifications String[]
+  startDate      DateTime? @db.Date
+  endDate        DateTime? @db.Date
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  team           Team?        @relation(fields: [teamId], references: [id])
+
+  @@index([organizationId])
+  @@index([teamId])
+  @@index([role])
+}
+
+// Organization Document
+model OrganizationDocument {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  category       String   // statuto, bilancio, verbale, certificato, etc
+  fileUrl        String
+  fileName       String
+  fileSize       Int?
+  mimeType       String?
+  year           Int?
+  uploadedById   String
+  isPublic       Boolean  @default(false)
+  tags           String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  uploadedBy     User         @relation(fields: [uploadedById], references: [id])
+
+  @@index([organizationId])
+  @@index([category])
+  @@index([year])
 }
