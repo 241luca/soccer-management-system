@@ -270,6 +270,7 @@ const SoccerManagementApp = () => {
             user={user}
             organization={organization}
             onNavigate={handleViewChange}
+            isSystemSettings={true}
           />
         );
       case 'organization-details':

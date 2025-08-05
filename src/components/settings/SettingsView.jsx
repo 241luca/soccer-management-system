@@ -4,10 +4,10 @@ import {
   Settings, Save, Bell, Shield, CreditCard, 
   Calendar, Globe, Users, Database, Building2,
   ChevronRight, Eye, EyeOff, Moon, Sun,
-  Zap, AlertCircle, CheckCircle, ExternalLink
+  Zap, AlertCircle, CheckCircle, ExternalLink, ArrowLeft
 } from 'lucide-react';
 
-const SettingsView = ({ user, organization, onNavigate }) => {
+const SettingsView = ({ user, organization, onNavigate, isSystemSettings = false }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [currentOrganization, setCurrentOrganization] = useState(organization);
   const [showOrgSelector, setShowOrgSelector] = useState(false);
@@ -170,13 +170,23 @@ const SettingsView = ({ user, organization, onNavigate }) => {
                 <span>Cambia Società</span>
               </button>
             )}
-            <button
-              onClick={() => onNavigate('system-settings')}
-              className="flex items-center space-x-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              <span>Apri Altri Dati</span>
-              <ExternalLink className="h-4 w-4" />
-            </button>
+            {isSystemSettings ? (
+              <button
+                onClick={() => onNavigate('settings')}
+                className="flex items-center space-x-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Ritorna all'Anagrafica</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onNavigate('system-settings')}
+                className="flex items-center space-x-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                <span>Apri Altri Dati</span>
+                <ExternalLink className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
