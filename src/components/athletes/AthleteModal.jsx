@@ -92,6 +92,11 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
       busFee: parseFloat(formData.busFee) || 0
     };
     
+    // Log per debug
+    console.log('Dati da salvare:', dataToSave);
+    console.log('Atleta esistente:', athlete);
+    console.log('ID atleta:', athlete?.id);
+    
     onSave(dataToSave);
   };
 
@@ -154,16 +159,6 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
                 >
                   <User className="h-4 w-4" />
                   Modifica
-                </button>
-              )}
-              
-              {isEditing && (
-                <button
-                  onClick={handleSubmit}
-                  className="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  Salva
                 </button>
               )}
               

@@ -168,9 +168,20 @@ class ApiClient {
   }
 
   async updateAthlete(id, data) {
+    console.log('updateAthlete called with:', { id, data });
+    
+    // Rimuovi campi che potrebbero causare problemi
+    const cleanData = { ...data };
+    delete cleanData.id; // Non inviare l'ID nel body
+    delete cleanData.name; // Campo legacy
+    delete cleanData.assignedBus; // Solo l'ID
+    delete cleanData.zone; // Solo l'ID
+    
+    console.log('Clean data to send:', cleanData);
+    
     return this.request(`/athletes/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     });
   }
 

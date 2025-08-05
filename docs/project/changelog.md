@@ -5,6 +5,26 @@ Tutte le modifiche significative al Soccer Management System sono documentate in
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.1.1] - 2025-08-05
+
+### 🆕 Aggiunto
+- **Gestione Tipi Documento Personalizzati**:
+  - Amministratori possono aggiungere nuovi tipi di documento
+  - Configurazione per documento obbligatorio/facoltativo
+  - Configurazione per richiesta data scadenza
+  - Modal dedicato per gestione tipi
+
+### 🔧 Modificato  
+- **Data Scadenza Documenti Opzionale**:
+  - Solo alcuni documenti richiedono data scadenza (certificato medico, assicurazione, carta identità)
+  - Altri documenti possono avere scadenza opzionale con checkbox
+  - Migliorata flessibilità gestione documenti
+
+### 🐛 Risolto
+- Fix errore caricamento documenti per nuovi atleti
+- Gestione corretta errori 404 (nessun documento trovato)
+- Fix pre-selezione tipo documento
+
 ## [2.1.0] - 2025-08-05
 
 ### 🆕 Aggiunto
