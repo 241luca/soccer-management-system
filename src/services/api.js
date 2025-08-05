@@ -264,6 +264,31 @@ class ApiClient {
       body: JSON.stringify({ organizationId })
     });
   }
+  
+  // Organizations methods
+  async get(path, options = {}) {
+    return this.request(path, {
+      ...options,
+      method: 'GET'
+    });
+  }
+  
+  async patch(path, data, options = {}) {
+    return this.request(path, {
+      ...options,
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  }
+  
+  async post(path, data, options = {}) {
+    return this.request(path, {
+      ...options,
+      method: 'POST',
+      body: data instanceof FormData ? data : JSON.stringify(data),
+      ...(data instanceof FormData ? {} : { headers: { 'Content-Type': 'application/json' } })
+    });
+  }
 
   // Add other methods as needed
 }

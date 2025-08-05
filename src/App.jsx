@@ -41,6 +41,7 @@ const SoccerManagementApp = () => {
   useEffect(() => {
     // Check if user is logged in
     const storedUser = localStorage.getItem('user');
+    const storedOrganization = localStorage.getItem('organization');
     const token = localStorage.getItem('token');
     
     if (storedUser && token) {
@@ -49,10 +50,18 @@ const SoccerManagementApp = () => {
         setUser(userData);
         api.setToken(token);
         console.log('User loaded:', userData);
+        
+        // Load organization if available
+        if (storedOrganization) {
+          const orgData = JSON.parse(storedOrganization);
+          setOrganization(orgData);
+          console.log('Organization loaded:', orgData);
+        }
       } catch (error) {
         console.error('Error parsing user data:', error);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        localStorage.removeItem('organization');
       }
     }
     setAuthLoading(false);
@@ -64,6 +73,10 @@ const SoccerManagementApp = () => {
     if (loginData.user) {
       setUser(loginData.user);
       setOrganization(loginData.organization);
+      // Salva anche l'organizzazione nel localStorage
+      if (loginData.organization) {
+        localStorage.setItem('organization', JSON.stringify(loginData.organization));
+      }
       toast.showSuccess(`Benvenuto ${loginData.user.firstName || 'Utente'} ${loginData.user.lastName || ''}!`);
     } else {
       // Compatibilità con il vecchio formato
@@ -168,9 +181,25 @@ const SoccerManagementApp = () => {
           />
         );
       case 'organization-details':
+        // Per Super Admin, mostra la lista delle organizzazioni
+        if (user?.role === 'SUPER_ADMIN' && !selectedOrganizationId) {
+          return (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold mb-4">Seleziona un'organizzazione</h2>
+              <p className="text-gray-600 mb-6">Come Super Admin, devi selezionare quale organizzazione vuoi gestire.</p>
+              <button
+                onClick={() => setCurrentView('organizations')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Vai alla lista organizzazioni
+              </button>
+            </div>
+          );
+        }
+        
         return (
           <OrganizationDetails 
-            organizationId={organization?.id}
+            organizationId={selectedOrganizationId || organization?.id}
             canEdit={user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'}
           />
         );

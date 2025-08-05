@@ -117,6 +117,31 @@ router.post('/current/logo',
   })
 );
 
+// Get organization details by ID (for super admin)
+router.get('/:organizationId/details',
+  authenticate,
+  requireSuperAdmin,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const details = await organizationService.getOrganizationDetails(
+      req.params.organizationId
+    );
+    res.json(details);
+  })
+);
+
+// Update organization details by ID (for super admin)
+router.patch('/:organizationId/details',
+  authenticate,
+  requireSuperAdmin,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const updated = await organizationService.updateOrganizationDetails(
+      req.params.organizationId,
+      req.body
+    );
+    res.json(updated);
+  })
+);
+
 // User management
 router.get('/users',
   extractOrganization,

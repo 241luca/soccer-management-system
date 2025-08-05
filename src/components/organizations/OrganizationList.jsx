@@ -60,7 +60,8 @@ const OrganizationList = ({ onNavigate }) => {
   };
 
   const handleViewDetails = (orgId) => {
-    if (onNavigate) onNavigate('organizations-detail', { orgId });
+    // Naviga all'anagrafica con l'ID dell'organizzazione
+    if (onNavigate) onNavigate('organization-details', { orgId });
   };
 
   const handleEdit = (orgId) => {
@@ -129,8 +130,8 @@ const OrganizationList = ({ onNavigate }) => {
                         onClick={() => handleViewDetails(org.id)}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
                       >
-                        <Eye className="w-4 h-4" />
-                        Visualizza
+                        <Building2 className="w-4 h-4" />
+                        Anagrafica
                       </button>
                       <button
                         onClick={() => handleEdit(org.id)}
@@ -202,7 +203,7 @@ const OrganizationList = ({ onNavigate }) => {
                 onClick={() => handleViewDetails(org.id)}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
-                Gestisci →
+                Gestisci Anagrafica →
               </button>
             </div>
           </div>
