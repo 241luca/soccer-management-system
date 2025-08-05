@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { athleteService } from '../services/athlete.service';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth.middleware';
+import { ensureOrganizationContext, getOrganizationId } from '../middleware/organizationContext.middleware';
 import { createAthleteSchema, updateAthleteSchema, paginationSchema, idParamSchema } from '../utils/validation';
 import { z } from 'zod';
 
@@ -8,6 +9,7 @@ const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
+router.use(ensureOrganizationContext);
 
 // Get all athletes
 router.get('/', async (req: AuthRequest, res, next) => {
@@ -21,7 +23,8 @@ router.get('/', async (req: AuthRequest, res, next) => {
       usesTransport: req.query.usesTransport === 'true'
     };
     
-    const result = await athleteService.findAll(req.user?.organizationId || "", params);
+    const organizationId = getOrganizationId(req);
+    const result = await athleteService.findAll(organizationId, params);
     return res.json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -41,7 +44,8 @@ router.get('/', async (req: AuthRequest, res, next) => {
 router.get('/:id', async (req: AuthRequest, res, next) => {
   try {
     const { id } = idParamSchema.parse(req.params);
-    const athlete = await athleteService.findById(id, req.user?.organizationId || "");
+    const organizationId = getOrganizationId(req);
+    const athlete = await athleteService.findById(id, organizationId);
     return res.json(athlete);
   } catch (error) {
     if (error instanceof z.ZodError) {

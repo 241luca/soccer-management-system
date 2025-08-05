@@ -1,14 +1,16 @@
 import { Router } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { ensureOrganizationContext, getOrganizationId } from '../middleware/organizationContext.middleware';
 import { prisma } from '../config/database';
 
 const router = Router();
 router.use(authenticate);
+router.use(ensureOrganizationContext);
 
 // Get dashboard statistics
 router.get('/stats', async (req: AuthRequest, res, next) => {
   try {
-    const organizationId = req.user!.organizationId;
+    const organizationId = getOrganizationId(req);
     const today = new Date();
     const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
 
