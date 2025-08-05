@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Corretto stesso errore in teamKits.routes.ts nelle funzioni GET, POST, PUT e DELETE
   - Corretto stesso errore in organizationDocuments.routes.ts nelle funzioni POST, GET (download), PUT e DELETE
   - Modificati i return nelle funzioni per essere compatibili con TypeScript
+- ✅ Backend ora si avvia correttamente
+  - Risolti tutti gli errori di compilazione TypeScript
+  - Il server ora parte sulla porta 3000 (o su altra porta se specificata in .env)
 
 ## [2.1.0] - 2025-08-04
 
