@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Il server ora parte sulla porta 3000 (o su altra porta se specificata in .env)
 - 🔧 Aggiunta route mancante per aggiornare i dettagli dell'organizzazione
   - Aggiunta route PATCH /api/v1/organizations/:id/details per permettere l'aggiornamento dei dettagli dell'organizzazione dal frontend
+- 📝 Creata guida completa per implementazione notifiche
+  - Salvata in docs/guides/NOTIFICATIONS_IMPLEMENTATION_GUIDE.md
+  - Include codice completo per tutti i componenti necessari
+  - Istruzioni step-by-step per future implementazioni
 
 ## [2.1.0] - 2025-08-04
 
