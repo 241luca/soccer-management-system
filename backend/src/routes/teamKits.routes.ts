@@ -74,20 +74,22 @@ router.get('/kits/:id',
       });
       
       if (!kit) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Team kit not found'
         });
+        return;
       }
       
       // Check permissions
       const user = req.user;
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== kit.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot access kit from another organization'
         });
+        return;
       }
       
       res.json(kit);
@@ -116,10 +118,11 @@ router.post('/organizations/:orgId/kits',
       // Validate kitType
       const validKitTypes = ['home', 'away', 'third', 'goalkeeper'];
       if (!validKitTypes.includes(kitData.kitType)) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation Error',
           message: 'Invalid kit type'
         });
+        return;
       }
       
       const kit = await prisma.teamKit.create({
@@ -158,42 +161,47 @@ router.put('/kits/:id',
       });
       
       if (!existingKit) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Team kit not found'
         });
+        return;
       }
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== existingKit.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot modify kit from another organization'
         });
+        return;
       }
       
       // Validate URLs if provided
       if (updateData.shopUrl && !isValidUrl(updateData.shopUrl)) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation Error',
           message: 'Invalid shop URL'
         });
+        return;
       }
       
       if (updateData.merchandiseUrl && !isValidUrl(updateData.merchandiseUrl)) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation Error',
           message: 'Invalid merchandise URL'
         });
+        return;
       }
       
       // Validate price if provided
       if (updateData.price !== undefined && updateData.price < 0) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation Error',
           message: 'Price cannot be negative'
         });
+        return;
       }
       
       // Ensure availableSizes is an array
@@ -237,19 +245,21 @@ router.delete('/kits/:id',
       });
       
       if (!kit) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Not Found',
           message: 'Team kit not found'
         });
+        return;
       }
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
           user?.organizationId !== kit.organizationId) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot delete kit from another organization'
         });
+        return;
       }
       
       // Soft delete
