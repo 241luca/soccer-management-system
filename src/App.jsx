@@ -57,15 +57,8 @@ const SoccerManagementApp = () => {
           setOrganization(orgData);
           console.log('Organization loaded:', orgData);
         } else if (userData.role === 'SUPER_ADMIN' || userData.isSuperAdmin) {
-          // Super Admin gets Demo organization by default
-          const demoOrg = {
-            id: '43c973a6-5e20-43af-a295-805f1d7c86b1',
-            name: 'Demo Soccer Club',
-            code: 'DEMO'
-          };
-          setOrganization(demoOrg);
-          localStorage.setItem('organization', JSON.stringify(demoOrg));
-          console.log('Super Admin - Demo organization set as default');
+          // Super Admin gets Demo organization by default - load full details
+          loadDefaultOrganization();
         }
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -112,6 +105,28 @@ const SoccerManagementApp = () => {
     // Il componente OrganizationSwitcher già ricarica la pagina
   };
 
+  const loadDefaultOrganization = async () => {
+    try {
+      const demoOrgId = '43c973a6-5e20-43af-a295-805f1d7c86b1';
+      const response = await api.get(`/organizations/${demoOrgId}/details`);
+      const orgData = response.data || response;
+      
+      setOrganization(orgData);
+      localStorage.setItem('organization', JSON.stringify(orgData));
+      console.log('Super Admin - Demo organization loaded with full details:', orgData);
+    } catch (error) {
+      console.error('Error loading default organization:', error);
+      // Fallback to basic data if API fails
+      const basicOrg = {
+        id: '43c973a6-5e20-43af-a295-805f1d7c86b1',
+        name: 'Demo Soccer Club',
+        code: 'DEMO'
+      };
+      setOrganization(basicOrg);
+      localStorage.setItem('organization', JSON.stringify(basicOrg));
+    }
+  };
+
   const handleLogout = async () => {
     await api.logout();
     setUser(null);
@@ -121,23 +136,22 @@ const SoccerManagementApp = () => {
 
   const handleChangeOrganization = async (orgId) => {
     try {
-      // Carica i dettagli dell'organizzazione
+      // Carica i dettagli completi dell'organizzazione
       const response = await api.get(`/organizations/${orgId}/details`);
       const orgData = response.data || response;
       
-      // Aggiorna il contesto
-      const newOrg = {
-        id: orgData.id,
-        name: orgData.name,
-        code: orgData.code
-      };
-      
-      setOrganization(newOrg);
-      localStorage.setItem('organization', JSON.stringify(newOrg));
+      // Aggiorna il contesto con tutti i dati
+      setOrganization(orgData);
+      localStorage.setItem('organization', JSON.stringify(orgData));
       
       // Torna alle impostazioni
       setCurrentView('settings');
-      toast.showSuccess(`Ora stai lavorando con: ${newOrg.name}`);
+      toast.showSuccess(`Ora stai lavorando con: ${orgData.name}`);
+      
+      // Ricarica i dati per il nuovo contesto
+      if (data.refreshData) {
+        data.refreshData();
+      }
     } catch (error) {
       console.error('Error changing organization:', error);
       toast.showError('Errore nel cambio organizzazione');
