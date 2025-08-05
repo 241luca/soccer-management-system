@@ -4,9 +4,19 @@ class ApiClient {
     this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
     // Try to get accessToken first, then fallback to token
     this.token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    
+    // Refresh token from localStorage before each request
+    this.refreshToken();
+  }
+  
+  refreshToken() {
+    this.token = localStorage.getItem('accessToken') || localStorage.getItem('token');
   }
 
   async request(endpoint, options = {}) {
+    // Refresh token before each request
+    this.refreshToken();
+    
     // Get user and organization data
     const user = localStorage.getItem('user');
     const organization = localStorage.getItem('organization');
@@ -43,6 +53,14 @@ class ApiClient {
       organizationId = '43c973a6-5e20-43af-a295-805f1d7c86b1'; // Demo Soccer Club ID
       console.log('Super Admin: Using default Demo organization ID');
     }
+    
+    // Debug logging
+    console.log(`API Request to ${endpoint}:`, {
+      hasToken: !!this.token,
+      organizationId,
+      isSuperAdmin,
+      userData: userData?.email
+    });
     
     // For specific organization endpoints, don't add X-Organization-ID header
     const isSpecificOrgEndpoint = endpoint.match(/^\/organizations\/[a-zA-Z0-9-]+\//);

@@ -174,8 +174,26 @@ export const useApiData = () => {
   // Initial load
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token && !isLoadingRef.current) {
+    const organization = localStorage.getItem('organization');
+    
+    // Only load if we have both token AND organization (or if user is not logged in)
+    if (token && organization && !isLoadingRef.current) {
+      console.log('Initial load: Token and organization found, loading data...');
       loadApiData();
+    } else if (token && !organization) {
+      console.log('Initial load: Token found but no organization, waiting...');
+      // For Super Admin without organization, wait a bit for App.jsx to set it
+      const checkInterval = setInterval(() => {
+        const org = localStorage.getItem('organization');
+        if (org) {
+          console.log('Organization now available, loading data...');
+          clearInterval(checkInterval);
+          loadApiData();
+        }
+      }, 500);
+      
+      // Clear interval after 5 seconds to avoid infinite loop
+      setTimeout(() => clearInterval(checkInterval), 5000);
     }
   }, []);
 
