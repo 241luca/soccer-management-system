@@ -323,7 +323,7 @@ const SoccerManagementApp = () => {
               }
               setCurrentView(view);
             }}
-            onSelectOrganization={user?.role === 'SUPER_ADMIN' || user?.isSuperAdmin ? handleChangeOrganization : null}
+            onSelectOrganization={(user?.role === 'SUPER_ADMIN' || user?.isSuperAdmin || user?.role === 'Owner') ? handleChangeOrganization : null}
           />
         );
       case 'organizations-new':

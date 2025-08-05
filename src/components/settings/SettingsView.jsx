@@ -153,15 +153,15 @@ const SettingsView = ({ user, organization, onNavigate, isSystemSettings = false
                 {currentOrganization?.name || 'Organizzazione'}
               </h3>
               <p className="text-sm text-gray-600">
-                {user?.role === 'SUPER_ADMIN' 
+                {user?.role === 'SUPER_ADMIN' || user?.role === 'Owner'
                   ? 'Stai visualizzando i dati di questa società'
-                  : 'Per modificare i dati della società, vai all\'anagrafica completa'
+                  : 'Gestisci i dati della tua società'
                 }
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {user?.role === 'SUPER_ADMIN' && (
+            {(user?.role === 'SUPER_ADMIN' || user?.role === 'Owner') && (
               <button
                 onClick={() => onNavigate('organizations')}
                 className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"

@@ -329,8 +329,9 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Solo per Super Admin - pulsante cambio società */}
-            {JSON.parse(localStorage.getItem('user') || '{}').role === 'SUPER_ADMIN' && (
+            {/* Solo per Super Admin o Owner Multi-Società - pulsante cambio società */}
+            {(JSON.parse(localStorage.getItem('user') || '{}').role === 'SUPER_ADMIN' || 
+              JSON.parse(localStorage.getItem('user') || '{}').role === 'Owner') && (
               <button
                 onClick={() => {
                   const event = new CustomEvent('navigate', { detail: { view: 'organizations' } });
