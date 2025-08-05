@@ -958,6 +958,8 @@ class OrganizationService {
     const updated = await prisma.organization.update({
       where: { id: organizationId },
       data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.code !== undefined && { code: data.code }),
         ...(data.fullName !== undefined && { fullName: data.fullName }),
         ...(data.address !== undefined && { address: data.address }),
         ...(data.city !== undefined && { city: data.city }),

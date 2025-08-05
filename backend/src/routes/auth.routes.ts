@@ -1,10 +1,13 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 import { authService } from '../services/auth.service';
 import { z } from 'zod';
 import { authenticate, extractOrganization, AuthRequest } from '../middleware/multi-tenant.middleware';
 import { authRateLimiter } from '../middleware/rateLimit.middleware';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
+const prisma = new PrismaClient();
 
 // Apply rate limiting to all auth routes
 router.use(authRateLimiter);
@@ -106,13 +109,13 @@ router.get('/user-organizations',
       }
     });
 
-    const organizations = userOrgs.map(uo => ({
+    const organizations = userOrgs.map((uo: any) => ({
       ...uo.organization,
       role: uo.role.name,
       isDefault: uo.isDefault
     }));
 
-    res.json(organizations);
+    return res.json(organizations);
   })
 );
 
