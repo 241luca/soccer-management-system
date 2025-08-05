@@ -236,7 +236,7 @@ const SoccerManagementApp = () => {
           <OrganizationList 
             onNavigate={(view, params) => {
               if (params?.orgId) {
-                // Store orgId for edit view
+                // Store orgId for edit/details view
                 setSelectedOrganizationId(params.orgId);
               }
               setCurrentView(view);

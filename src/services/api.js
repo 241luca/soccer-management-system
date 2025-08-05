@@ -2,28 +2,40 @@
 class ApiClient {
   constructor() {
     this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
-    this.token = localStorage.getItem('token');
+    // Try to get accessToken first, then fallback to token
+    this.token = localStorage.getItem('accessToken') || localStorage.getItem('token');
   }
 
   async request(endpoint, options = {}) {
-    // Get organization ID from localStorage
+    // Get user and organization data
     const user = localStorage.getItem('user');
+    const organization = localStorage.getItem('organization');
+    let userData = null;
     let organizationId = null;
+    let isSuperAdmin = false;
+    
     if (user) {
       try {
-        const userData = JSON.parse(user);
+        userData = JSON.parse(user);
         organizationId = userData.organizationId;
+        isSuperAdmin = userData.role === 'SUPER_ADMIN' || userData.isSuperAdmin;
       } catch (e) {
         console.error('Error parsing user data:', e);
       }
     }
+    
+    // For specific organization endpoints, don't add X-Organization-ID header
+    const isSpecificOrgEndpoint = endpoint.match(/^\/organizations\/[a-zA-Z0-9-]+\//);
     
     const config = {
       ...options,
       headers: {
         'Content-Type': 'application/json',
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...(organizationId && { 'X-Organization-ID': organizationId }),
+        // Add X-Organization-ID only if:
+        // 1. We have an organizationId AND
+        // 2. It's not a specific organization endpoint (like /organizations/{id}/details)
+        ...(organizationId && !isSpecificOrgEndpoint && { 'X-Organization-ID': organizationId }),
         ...options.headers
       }
     };
@@ -47,8 +59,10 @@ class ApiClient {
     this.token = token;
     if (token) {
       localStorage.setItem('token', token);
+      localStorage.setItem('accessToken', token);
     } else {
       localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
     }
   }
 
@@ -92,6 +106,8 @@ class ApiClient {
     }
     this.setToken(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('organization');
+    localStorage.removeItem('refreshToken');
   }
 
   // Dashboard

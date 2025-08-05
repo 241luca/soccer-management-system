@@ -21,6 +21,8 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
 const OrganizationDetails = ({ organizationId, canEdit = true }) => {
+  console.log('OrganizationDetails mounted with organizationId:', organizationId, 'canEdit:', canEdit);
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [organization, setOrganization] = useState(null);
@@ -128,7 +130,22 @@ const OrganizationDetails = ({ organizationId, canEdit = true }) => {
         ? `/organizations/${organizationId}/details`
         : '/organizations/current/details';
       
-      await api.patch(url, formData);
+      const options = {};
+      
+      // Se stiamo modificando un'organizzazione specifica come Super Admin
+      // NON inviare X-Organization-ID header
+      if (!organizationId) {
+        // Solo per l'organizzazione corrente
+        const org = localStorage.getItem('organization');
+        if (org) {
+          const orgData = JSON.parse(org);
+          options.headers = {
+            'X-Organization-ID': orgData.id
+          };
+        }
+      }
+      
+      await api.patch(url, formData, options);
       
       setSuccessMessage('Dati salvati con successo!');
       setTimeout(() => setSuccessMessage(''), 3000);
