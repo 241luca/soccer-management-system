@@ -93,6 +93,30 @@ router.get('/user-organizations',
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
+    // Se è Super Admin, restituisci tutte le organizzazioni
+    if (req.user?.isSuperAdmin) {
+      const allOrgs = await prisma.organization.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          logoUrl: true,
+          plan: true
+        },
+        orderBy: { name: 'asc' }
+      });
+
+      const organizations = allOrgs.map((org: any) => ({
+        ...org,
+        role: 'SUPER_ADMIN',
+        isDefault: org.code === 'DEMO' // Demo è default per Super Admin
+      }));
+
+      return res.json(organizations);
+    }
+
+    // Per utenti normali, cerca nelle userOrganization
     const userOrgs = await prisma.userOrganization.findMany({
       where: { userId },
       include: {

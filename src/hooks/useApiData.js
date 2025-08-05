@@ -86,47 +86,61 @@ export const useApiData = () => {
       // Process athletes
       let athletesData = [];
       if (results[1].status === 'fulfilled') {
-        // L'API restituisce { data: [...], pagination: {...} }
-        athletesData = results[1].value.data || [];
-        console.log('Athletes loaded:', athletesData.length);
+        const response = results[1].value;
+        // Prova diversi formati di risposta
+        if (Array.isArray(response)) {
+          athletesData = response;
+        } else if (response.data && Array.isArray(response.data)) {
+          athletesData = response.data;
+        } else if (response.athletes && Array.isArray(response.athletes)) {
+          athletesData = response.athletes;
+        }
+        console.log('Athletes response:', response);
+        console.log('Athletes parsed:', athletesData.length);
       }
 
       // Process teams
       let teamsData = [];
       if (results[2].status === 'fulfilled') {
-        // L'API restituisce { data: [...] }
-        teamsData = results[2].value.data || [];
-        console.log('Teams loaded:', teamsData.length);
+        const response = results[2].value;
+        if (Array.isArray(response)) {
+          teamsData = response;
+        } else if (response.data && Array.isArray(response.data)) {
+          teamsData = response.data;
+        } else if (response.teams && Array.isArray(response.teams)) {
+          teamsData = response.teams;
+        }
+        console.log('Teams parsed:', teamsData.length);
       }
 
       // Process documents
       let documentsData = [];
       if (results[3].status === 'fulfilled') {
-        documentsData = results[3].value.data || [];
+        documentsData = results[3].value.documents || results[3].value.data || [];
       }
 
       // Process payments
       let paymentsData = [];
       if (results[4].status === 'fulfilled') {
-        paymentsData = results[4].value.data || [];
+        paymentsData = results[4].value.payments || results[4].value.data || [];
       }
 
       // Process matches
       let matchesData = [];
       if (results[5].status === 'fulfilled') {
-        matchesData = results[5].value.data || [];
+        matchesData = results[5].value.matches || results[5].value.data || [];
       }
 
       // Process transport zones
       let zonesData = [];
       if (results[6].status === 'fulfilled') {
-        zonesData = results[6].value.data || [];
+        zonesData = results[6].value.zones || results[6].value.data || [];
       }
 
       // Process buses
       let busesData = [];
       if (results[7].status === 'fulfilled') {
-        busesData = results[7].value.data || [];
+        busesData = results[7].value.buses || results[7].value.data || [];
       }
 
       // Set the data
