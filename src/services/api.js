@@ -322,6 +322,35 @@ class ApiClient {
     });
   }
 
+  // Notifications
+  async getNotifications(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return this.request(`/notifications${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async markNotificationAsRead(id) {
+    return this.request(`/notifications/${id}/read`, {
+      method: 'PUT'
+    });
+  }
+
+  async markAllNotificationsAsRead() {
+    return this.request('/notifications/read-all', {
+      method: 'PUT'
+    });
+  }
+
+  async deleteNotification(id) {
+    return this.request(`/notifications/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async getUnreadNotificationCount() {
+    const notifications = await this.getNotifications({ unread: true });
+    return notifications.length || 0;
+  }
+
   // Add other methods as needed
 }
 
