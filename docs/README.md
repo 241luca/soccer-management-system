@@ -1,75 +1,84 @@
-# 📚 Documentazione Soccer Management System
+# 📚 Soccer Management System - Documentazione
 
-Benvenuto nella documentazione del Soccer Management System! Qui troverai tutte le informazioni necessarie per comprendere, utilizzare e contribuire al progetto.
+## Indice Generale
 
-## 🗂️ Struttura Documentazione
+### 🚀 Getting Started
+- [README Principale](../README.md) - Panoramica del progetto
+- [Quick Start Guide](./guides/quick-start.md) - Inizia subito
+- [Installation Guide](./deployment/installation.md) - Installazione dettagliata
 
-### 📖 [Guide Utente](./guides/)
-- [Quick Start](./guides/QUICK-START.md) - Inizia subito con il sistema
-- [Manuale Utente](./guides/USER-MANUAL.md) - Guida completa all'utilizzo
-- [FAQ](./guides/FAQ.md) - Domande frequenti
+### 📋 Guide Utente
 
-### 🛠️ [Sviluppo](./development/)
-- [Setup Ambiente](./development/SETUP.md) - Configurazione ambiente di sviluppo
-- [Architettura](./development/ARCHITECTURE.md) - Struttura del progetto
-- 🏢 **[Multi-Tenant Setup](./development/MULTI-TENANT-SETUP-GUIDE.md)** - Guida setup multi-tenant
-- 🔄 **[Migrazione Multi-Tenant](./development/MULTI-TENANT-MIGRATION.md)** - Migrazione da v1 a v2
-- [Frontend Guide](./development/FRONTEND-GUIDE.md) - Sviluppo frontend
-- [Backend Guide](./development/BACKEND-GUIDE.md) - Sviluppo backend
-- [Database Schema](./development/DATABASE-SCHEMA.md) - Struttura database
-- [Testing](./development/TESTING.md) - Guide per i test
+#### Gestione Organizzazioni
+- [**Anagrafica Società**](./guides/organization-management.md) - Guida completa gestione organizzazioni
+- [Changelog Organizzazioni](./CHANGELOG_ORGANIZATIONS.md) - Novità v2.0
+- [Multi-Società](./guides/multi-organization.md) - Gestione multiple società
 
-### 🔌 [API Reference](./api/)
-- [REST API](./api/REST-API.md) - Documentazione endpoints
-- [WebSocket API](./api/WEBSOCKET-API.md) - Eventi real-time
-- [Authentication](./api/AUTHENTICATION.md) - Sistema di autenticazione
-- [Error Codes](./api/ERROR-CODES.md) - Codici di errore
+#### Gestione Sportiva
+- [Gestione Atleti](./guides/athletes-management.md)
+- [Gestione Squadre](./guides/teams-management.md)
+- [Calendario e Partite](./guides/matches-calendar.md)
 
-### 🚀 [Deployment](./deployment/)
-- [Deploy Guide](./deployment/DEPLOY-GUIDE.md) - Come deployare il sistema
-- [Docker Setup](./deployment/DOCKER.md) - Containerizzazione
-- [Environment Variables](./deployment/ENVIRONMENT.md) - Variabili d'ambiente
-- [Security](./deployment/SECURITY.md) - Best practices sicurezza
+#### Amministrazione
+- [Documenti](./guides/documents.md)
+- [Pagamenti e Quote](./guides/payments.md)
+- [Notifiche](./guides/notifications.md)
 
-### 📋 [Project Management](./project/)
-- [Roadmap](./project/ROADMAP.md) - Piano di sviluppo
-- [Changelog](../CHANGELOG.md) - Storia delle versioni
-- [Contributing](./project/CONTRIBUTING.md) - Come contribuire
+### 🔧 Documentazione Tecnica
 
-## 🚀 Quick Links
+#### Architettura
+- [Panoramica Architettura](./development/architecture.md)
+- [**Organizzazioni - Tech Docs**](./development/organization-technical.md) - Dettagli tecnici modulo organizzazioni
+- [Database Schema](./development/database-schema.md)
+- [Security Model](./development/security.md)
 
-- **Inizia Subito**: [Quick Start Guide](./guides/QUICK-START.md)
-- **Multi-Tenant Setup**: [Multi-Tenant Guide](./development/MULTI-TENANT-SETUP-GUIDE.md)
-- **API Reference**: [REST API Documentation](./api/REST-API.md)
-- **Deploy**: [Deployment Guide](./deployment/DEPLOY-GUIDE.md)
-- **Contribuisci**: [Contributing Guidelines](./project/CONTRIBUTING.md)
+#### API Reference
+- [API Overview](./api/README.md)
+- [**Organizations API**](./api/organizations-api.md) - Endpoint organizzazioni
+- [Authentication API](./api/auth-api.md)
+- [Athletes API](./api/athletes-api.md)
+- [Teams API](./api/teams-api.md)
 
-## 🏢 Novità v2.0 - Multi-Tenant
+#### Development
+- [Development Setup](./development/setup.md)
+- [Coding Standards](./development/coding-standards.md)
+- [Testing Guide](./development/testing.md)
+- [Contributing](./development/contributing.md)
 
-La versione 2.0 introduce il supporto completo multi-tenant:
+### 📊 Project Management
+- [Roadmap](./project/roadmap.md)
+- [Milestones](./project/milestones.md)
+- [Tech Debt](./project/tech-debt.md)
 
-- **Isolamento dati** per organizzazione
-- **Subdomini personalizzati** (demo.soccermanager.com)
-- **Piani di abbonamento** (Basic, Pro, Enterprise)
-- **Sistema permessi** avanzato
-- **Super Admin** per gestione globale
-- **API multi-tenant** native
+### 🚀 Deployment
+- [Production Setup](./deployment/production.md)
+- [Docker Guide](./deployment/docker.md)
+- [Environment Variables](./deployment/environment.md)
+- [Backup & Recovery](./deployment/backup.md)
 
-Per maggiori dettagli, consulta la [Guida Multi-Tenant](./development/MULTI-TENANT-SETUP-GUIDE.md).
+### 📝 Changelog
+- [Main Changelog](./CHANGELOG.md)
+- [**Organizations Changelog**](./CHANGELOG_ORGANIZATIONS.md) - v2.0 Updates
+- [API Changes](./api/CHANGELOG.md)
 
-## 📊 Stato del Progetto
+## 🆕 Novità v2.0 - Gennaio 2025
 
-- **Versione**: 2.0.0 (Multi-Tenant)
-- **Stato**: Production Ready
-- **License**: MIT
-- **Architettura**: Multi-Tenant SaaS
+### Anagrafica Società Completamente Ridisegnata
+- ✨ **10 Tab Specializzati**: Informazioni, Contatti, Legale, Aspetto, Social, Strutture, Maglie, Staff, Sponsor, Documenti
+- 💰 **Gestione Sponsor**: Contratti, visibilità, categorie
+- 💸 **Compensi Staff**: Stipendi, contratti, pagamenti
+- 🛍️ **E-commerce Maglie**: Shop online integrato
+- 🏢 **Multi-Società Enhanced**: Per manager di più organizzazioni
+- 🔄 **Navigazione Intuitiva**: Flusso ottimizzato
 
-## 🆘 Supporto
+[Leggi il changelog completo →](./CHANGELOG_ORGANIZATIONS.md)
 
-- **Issues**: [GitHub Issues](https://github.com/241luca/soccer-management-system/issues)
-- **Discussioni**: [GitHub Discussions](https://github.com/241luca/soccer-management-system/discussions)
-- **Email**: lucamambelli@lmtecnologie.it
+## 📞 Supporto
+
+- **Email**: support@soccermanager.com
+- **GitHub Issues**: [Report a bug](https://github.com/241luca/soccer-management-system/issues)
+- **Wiki**: [Knowledge Base](https://github.com/241luca/soccer-management-system/wiki)
 
 ---
 
-Ultima modifica: Agosto 2025
+*Documentazione aggiornata a: Gennaio 2025 - v2.0*
