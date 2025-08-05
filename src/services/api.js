@@ -17,11 +17,25 @@ class ApiClient {
     if (user) {
       try {
         userData = JSON.parse(user);
-        organizationId = userData.organizationId;
         isSuperAdmin = userData.role === 'SUPER_ADMIN' || userData.isSuperAdmin;
       } catch (e) {
         console.error('Error parsing user data:', e);
       }
+    }
+    
+    // Get organizationId from organization object first, then from user
+    if (organization) {
+      try {
+        const orgData = JSON.parse(organization);
+        organizationId = orgData.id;
+      } catch (e) {
+        console.error('Error parsing organization data:', e);
+      }
+    }
+    
+    // Fallback to user organizationId if not found
+    if (!organizationId && userData?.organizationId) {
+      organizationId = userData.organizationId;
     }
     
     // For specific organization endpoints, don't add X-Organization-ID header

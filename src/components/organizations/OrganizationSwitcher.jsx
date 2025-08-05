@@ -68,8 +68,8 @@ const OrganizationSwitcher = ({ currentOrganization, onSwitch }) => {
     }
   };
 
-  // Se c'è solo un'organizzazione, non mostrare il switcher
-  if (organizations.length <= 1) {
+  // Se c'è solo un'organizzazione o ancora in caricamento, non mostrare il switcher
+  if (!organizations || organizations.length <= 1) {
     return null;
   }
 

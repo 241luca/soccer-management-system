@@ -223,6 +223,34 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
 
 ---
 
+## 🆕 Fix Recenti (Agosto 2025)
+
+### Fix Cambio Organizzazione Super Admin
+- ✅ Corretto errore in OrganizationSwitcher (check organizations.length)
+- ✅ Fix API client per gestione Organization ID da localStorage
+- ✅ Implementato flusso cambio organizzazione senza page reload
+- ✅ Aggiunto parametro onSelectOrganization in OrganizationList
+- ✅ Toast di conferma dopo cambio organizzazione
+
+### Dettagli Tecnici
+1. **OrganizationSwitcher.jsx**
+   - Aggiunto check per `organizations` prima di verificare length
+   - Previene errore "Cannot read properties of undefined"
+
+2. **api.js**
+   - Modificata logica per ottenere organizationId
+   - Prima cerca in localStorage 'organization' (per Super Admin)
+   - Poi fallback su userData.organizationId
+   - Risolve errore "Organization ID required" per chiamate API
+
+3. **App.jsx + OrganizationList.jsx**
+   - Implementato handleChangeOrganization
+   - Carica dettagli organizzazione dal backend
+   - Aggiorna contesto senza reload completo
+   - Navigazione fluida a settings dopo cambio
+
+---
+
 ## 🎉 Il sistema è ora COMPLETAMENTE FUNZIONANTE e pronto per l'uso!
 
 Tutti i componenti sono implementati, testati e integrati. Il sistema può essere utilizzato sia in modalità demo (senza backend) che in modalità completa con persistenza dati.
