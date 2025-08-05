@@ -60,6 +60,7 @@ const SoccerManagementApp = () => {
           // Clear organization for Super Admin
           localStorage.removeItem('organization');
           setOrganization(null);
+          console.log('Super Admin detected - no default organization');
         }
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -193,8 +194,8 @@ const SoccerManagementApp = () => {
           />
         );
       case 'organization-details':
-        // Per Super Admin, mostra la lista delle organizzazioni
-        if (user?.role === 'SUPER_ADMIN' && !selectedOrganizationId) {
+        // Per Super Admin, mostra la lista delle organizzazioni se non ha selezionato un'organizzazione
+        if (user?.role === 'SUPER_ADMIN' && !selectedOrganizationId && !organization?.id) {
           return (
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-2xl font-bold mb-4">Seleziona un'organizzazione</h2>
@@ -213,6 +214,16 @@ const SoccerManagementApp = () => {
           <OrganizationDetails 
             organizationId={selectedOrganizationId || organization?.id}
             canEdit={user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'}
+            onBack={() => {
+              // Se c'era un organizationId selezionato, torna alla lista
+              if (selectedOrganizationId) {
+                setSelectedOrganizationId(null);
+                setCurrentView('organizations');
+              } else {
+                // Altrimenti torna alle impostazioni
+                setCurrentView('settings');
+              }
+            }}
           />
         );
       case 'notifications':

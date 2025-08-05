@@ -14,13 +14,14 @@ import {
   Share2,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  ArrowLeft
 } from 'lucide-react';
 import { api } from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
-const OrganizationDetails = ({ organizationId, canEdit = true }) => {
+const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
   console.log('OrganizationDetails mounted with organizationId:', organizationId, 'canEdit:', canEdit);
   
   const [loading, setLoading] = useState(true);
@@ -246,17 +247,32 @@ const OrganizationDetails = ({ organizationId, canEdit = true }) => {
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-          Anagrafica Società
-          {organization && (
-            <span className="text-lg font-medium text-gray-600 animate-fade-in-down">
-              - {organization.name}
-            </span>
-          )}
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Gestisci i dettagli completi della tua organizzazione
-        </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Torna indietro"
+              >
+                <ArrowLeft className="h-5 w-5 text-gray-600" />
+              </button>
+            )}
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                Anagrafica Società
+                {organization && (
+                  <span className="text-lg font-medium text-gray-600 animate-fade-in-down">
+                    - {organization.name}
+                  </span>
+                )}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Gestisci i dettagli completi della tua organizzazione
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Success/Error Messages */}
