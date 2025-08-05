@@ -147,6 +147,8 @@ router.post('/super-admin/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
     
+    console.log('Super Admin login attempt:', { email, passwordLength: password?.length });
+    
     if (!email || !password) {
       return res.status(400).json({
         error: {
@@ -159,6 +161,7 @@ router.post('/super-admin/login', async (req, res, next) => {
     const result = await authService.loginSuperAdmin(email, password);
     return res.json(result);
   } catch (error) {
+    console.error('Super Admin login error:', error);
     return next(error);
   }
 });

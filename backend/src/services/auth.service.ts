@@ -1,12 +1,11 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PrismaClient, User, Organization } from '@prisma/client';
+import { User, Organization } from '@prisma/client';
+import { prisma } from '../config/database';
 import { UnauthorizedError, ConflictError, BadRequestError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { DEFAULT_ROLES } from '../types/permissions';
-
-const prisma = new PrismaClient();
 
 export interface LoginInput {
   email: string;
@@ -652,24 +651,32 @@ export class AuthService {
   }
 
   // Super Admin methods
-    async loginSuperAdmin(email: string, password: string) {
-    // Check if it's a valid superadmin email
-    const SUPER_ADMIN_EMAILS = ['superadmin@soccermanager.com'];
-    
-    if (!SUPER_ADMIN_EMAILS.includes(email)) {
-      throw new UnauthorizedError('Invalid super admin credentials');
-    }
+  async loginSuperAdmin(email: string, password: string) {
+  console.log('LoginSuperAdmin called with email:', email);
+  
+  // Check if it's a valid superadmin email
+  const SUPER_ADMIN_EMAILS = ['superadmin@soccermanager.com'];
+  
+  if (!SUPER_ADMIN_EMAILS.includes(email)) {
+      console.log('Email not in SUPER_ADMIN_EMAILS list');
+    throw new UnauthorizedError('Invalid super admin credentials');
+  }
 
-    // Find user in SuperAdmin table
+  // Find user in SuperAdmin table
     const superAdmin = await prisma.superAdmin.findUnique({
-      where: { email }
-    });
+    where: { email }
+  });
+  
+    console.log('SuperAdmin found:', superAdmin ? 'Yes' : 'No');
 
-    if (!superAdmin || !superAdmin.isActive) {
-      throw new UnauthorizedError('Invalid credentials');
+  if (!superAdmin || !superAdmin.isActive) {
+  console.log('SuperAdmin not found or not active');
+    throw new UnauthorizedError('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, superAdmin.passwordHash);
+    console.log('Password valid:', isPasswordValid);
+    
     if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid credentials');
     }
