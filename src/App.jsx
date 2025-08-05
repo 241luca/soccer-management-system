@@ -100,6 +100,19 @@ const SoccerManagementApp = () => {
     setAuthLoading(false);
   }, []);
 
+  // Aggiungi event listener per navigazione personalizzata
+  useEffect(() => {
+    const handleNavigateEvent = (event) => {
+      const { view } = event.detail;
+      if (view) {
+        setCurrentView(view);
+      }
+    };
+
+    window.addEventListener('navigate', handleNavigateEvent);
+    return () => window.removeEventListener('navigate', handleNavigateEvent);
+  }, []);
+
   // Funzione globale per mostrare toast
   useEffect(() => {
     window.showToast = (type, message) => {

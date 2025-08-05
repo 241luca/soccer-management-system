@@ -643,100 +643,21 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
                 Accedi alle impostazioni dettagliate della società per configurare notifiche, permessi, economiche e altre funzionalità.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex justify-center py-8">
                 <button
                   onClick={() => {
                     if (onBack) onBack();
-                    // Naviga verso le impostazioni generali
-                    window.location.href = '#/settings';
+                    // Torna alle impostazioni
+                    setTimeout(() => {
+                      const event = new CustomEvent('navigate', { detail: { view: 'settings' } });
+                      window.dispatchEvent(event);
+                    }, 100);
                   }}
-                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
                 >
-                  <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-lg mr-3">
-                      <Settings className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">Impostazioni Generali</p>
-                      <p className="text-sm text-gray-500">Configura le impostazioni base</p>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-                </button>
-                
-                <button
-                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
-                >
-                  <div className="flex items-center">
-                    <div className="p-2 bg-green-100 rounded-lg mr-3">
-                      <Bell className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">Notifiche</p>
-                      <p className="text-sm text-gray-500">Gestisci le notifiche del sistema</p>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-                </button>
-                
-                <button
-                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
-                >
-                  <div className="flex items-center">
-                    <div className="p-2 bg-purple-100 rounded-lg mr-3">
-                      <Shield className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">Permessi</p>
-                      <p className="text-sm text-gray-500">Configura ruoli e permessi</p>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-                </button>
-                
-                <button
-                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
-                >
-                  <div className="flex items-center">
-                    <div className="p-2 bg-orange-100 rounded-lg mr-3">
-                      <DollarSign className="h-5 w-5 text-orange-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">Economiche</p>
-                      <p className="text-sm text-gray-500">Gestisci quote e pagamenti</p>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-                </button>
-                
-                <button
-                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
-                >
-                  <div className="flex items-center">
-                    <div className="p-2 bg-red-100 rounded-lg mr-3">
-                      <Users className="h-5 w-5 text-red-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">Categorie</p>
-                      <p className="text-sm text-gray-500">Gestisci categorie e squadre</p>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-                </button>
-                
-                <button
-                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
-                >
-                  <div className="flex items-center">
-                    <div className="p-2 bg-gray-100 rounded-lg mr-3">
-                      <Settings className="h-5 w-5 text-gray-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">Sistema</p>
-                      <p className="text-sm text-gray-500">Configurazioni avanzate</p>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                  <Settings className="h-5 w-5 mr-2" />
+                  <span>Vai alle Impostazioni</span>
+                  <ExternalLink className="h-4 w-4 ml-2" />
                 </button>
               </div>
             </div>

@@ -174,7 +174,7 @@ const SettingsView = ({ user, organization, onNavigate }) => {
               onClick={() => onNavigate('organization-details')}
               className="flex items-center space-x-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
             >
-              <span>Apri Anagrafica</span>
+              <span>Apri Altri Dati</span>
               <ExternalLink className="h-4 w-4" />
             </button>
           </div>
