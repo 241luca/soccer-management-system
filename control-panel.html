@@ -469,6 +469,34 @@
                 </div>
             </div>
 
+            <!-- Reset & Fix Commands -->
+            <div class="card">
+                <h2>
+                    🔧 Reset & Fix
+                    <span class="badge backend">Fix</span>
+                </h2>
+                
+                <div class="command-group">
+                    <h3>Reset Applicazione</h3>
+                    <div class="command" onclick="copyCommand(this)">
+                        cd /Users/lucamambelli/Desktop/soccer-management-system && ./reset-app.sh
+                        <div class="description">Reset completo: reinstalla dipendenze, pulisce cache</div>
+                    </div>
+                    <div class="command" onclick="copyCommand(this)">
+                        cd /Users/lucamambelli/Desktop/soccer-management-system && ./quick-reset.sh
+                        <div class="description">Reset veloce: pulisce solo browser e localStorage</div>
+                    </div>
+                </div>
+
+                <div class="command-group">
+                    <h3>Pulizia Browser (da console)</h3>
+                    <div class="command" onclick="copyCommand(this)">
+                        localStorage.clear(); sessionStorage.clear(); document.cookie.split(';').forEach(c => document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/')); location.reload();
+                        <div class="description">Copia e incolla nella console del browser (F12)</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- System Commands -->
             <div class="card">
                 <h2>
