@@ -86,7 +86,7 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
     const dataToSave = {
       ...formData,
       age: parseInt(formData.age),
-      teamId: parseInt(formData.teamId),
+      teamId: formData.teamId, // NON convertire in intero, è un UUID
       number: formData.number ? parseInt(formData.number) : null,
       membershipFee: parseFloat(formData.membershipFee) || 0,
       busFee: parseFloat(formData.busFee) || 0
@@ -331,7 +331,7 @@ const AthleteModal = ({ athlete, data, onClose, onSave, toast }) => {
                   {isEditing ? (
                     <select
                       value={formData.teamId}
-                      onChange={(e) => handleChange('teamId', parseInt(e.target.value))}
+                      onChange={(e) => handleChange('teamId', e.target.value)} // Rimuovi parseInt
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Seleziona squadra</option>
