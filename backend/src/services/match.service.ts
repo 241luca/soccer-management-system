@@ -387,11 +387,11 @@ export class MatchService {
       }
       
       // Delete related data
-      await prisma.matchAthlete.deleteMany({
+      await prisma.matchRoster.deleteMany({
         where: { matchId: id }
       });
       
-      await prisma.matchEvent.deleteMany({
+      await prisma.matchStat.deleteMany({
         where: { matchId: id }
       });
       
@@ -442,12 +442,12 @@ export class MatchService {
       }
       
       // Delete existing roster
-      await prisma.matchAthlete.deleteMany({
+      await prisma.matchRoster.deleteMany({
         where: { matchId: data.matchId }
       });
       
       // Create new roster
-      await prisma.matchAthlete.createMany({
+      await prisma.matchRoster.createMany({
         data: data.roster.map(r => ({
           matchId: data.matchId,
           athleteId: r.athleteId,
@@ -514,7 +514,7 @@ export class MatchService {
       
       // Record match events if provided
       if (events && events.length > 0) {
-        await prisma.matchEvent.createMany({
+        await prisma.matchStat.createMany({
           data: events.map(event => ({
             matchId,
             athleteId: event.athleteId,
@@ -674,16 +674,16 @@ export class MatchService {
   // Helper functions
   private calculateMatchStatus(match: Match): MatchStatus {
     const now = new Date();
-    const matchDate = new Date(match.date);
+    const date = new Date(match.date);
     
     // Set match time if provided
     if (match.time) {
       const [hours, minutes] = match.time.split(':');
-      matchDate.setHours(parseInt(hours), parseInt(minutes));
+      date.setHours(parseInt(hours), parseInt(minutes));
     }
     
     // If match is in the past and not completed, mark as needing update
-    if (matchDate < now && match.status === 'SCHEDULED') {
+    if (date < now && match.status === 'SCHEDULED') {
       return 'IN_PROGRESS'; // Or could return a custom status
     }
     

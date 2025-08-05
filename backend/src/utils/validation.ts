@@ -81,8 +81,8 @@ export const createMatchSchema = z.object({
   competitionId: z.number().int().positive().optional(),
   homeTeamId: z.string().uuid(),
   awayTeamId: z.string().uuid(),
-  matchDate: z.string().datetime(),
-  matchTime: z.string().regex(/^\d{2}:\d{2}$/),
+  date: z.string().datetime(),
+  time: z.string().regex(/^\d{2}:\d{2}$/),
   venueId: z.number().int().positive().optional(),
   notes: z.string().optional()
 });

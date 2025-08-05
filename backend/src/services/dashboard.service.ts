@@ -373,13 +373,13 @@ export class DashboardService {
       prisma.match.count({
         where: {
           organizationId,
-          matchDate: { gte: startOfWeek, lte: endOfWeek }
+          date: { gte: startOfWeek, lte: endOfWeek }
         }
       }),
       prisma.match.count({
         where: {
           organizationId,
-          matchDate: { gte: startOfMonth, lte: endOfMonth }
+          date: { gte: startOfMonth, lte: endOfMonth }
         }
       }),
       prisma.match.findMany({
@@ -391,21 +391,21 @@ export class DashboardService {
           homeTeam: { select: { id: true, name: true } },
           awayTeam: { select: { id: true, name: true } }
         },
-        orderBy: { matchDate: 'desc' },
+        orderBy: { date: 'desc' },
         take: 5
       }),
       prisma.match.findMany({
         where: {
           organizationId,
           status: 'SCHEDULED',
-          matchDate: { gte: now }
+          date: { gte: now }
         },
         include: {
           homeTeam: { select: { id: true, name: true } },
           awayTeam: { select: { id: true, name: true } },
           venue: { select: { name: true } }
         },
-        orderBy: { matchDate: 'asc' },
+        orderBy: { date: 'asc' },
         take: 5
       })
     ]);
@@ -444,7 +444,7 @@ export class DashboardService {
       winRate,
       recentResults: recentMatches.map(match => ({
         id: match.id,
-        date: match.matchDate,
+        date: match.date,
         homeTeam: match.homeTeam.name,
         awayTeam: match.awayTeam.name,
         result: `${match.homeScore} - ${match.awayScore}`,
@@ -454,8 +454,8 @@ export class DashboardService {
       })),
       upcomingMatches: upcomingMatches.map(match => ({
         id: match.id,
-        date: match.matchDate,
-        time: match.matchTime,
+        date: match.date,
+        time: match.time,
         homeTeam: match.homeTeam.name,
         awayTeam: match.awayTeam.name,
         venue: match.venue?.name || 'TBD',
@@ -466,7 +466,7 @@ export class DashboardService {
 
   private async getTransportStats(organizationId: string) {
     const [activeTransports, zones, buses, monthlyRevenue] = await Promise.all([
-      prisma.athleteTransport.count({
+      prisma.busAthlete.count({
         where: {
           athlete: { organizationId },
           isActive: true
@@ -504,7 +504,7 @@ export class DashboardService {
 
     buses.forEach(bus => {
       totalCapacity += bus.capacity;
-      totalOccupied += bus.routes.reduce((sum, route) => sum + route._count.transports, 0);
+      totalOccupied += bus.routes.reduce((sum, route) => sum + route._count.busAthletes, 0);
     });
 
     const busUtilization = totalCapacity > 0 ? Math.round((totalOccupied / totalCapacity) * 100) : 0;
@@ -701,7 +701,7 @@ export class DashboardService {
         where: {
           organizationId,
           status: 'COMPLETED',
-          matchDate: {
+          date: {
             gte: lastMonth,
             lte: lastMonthEnd
           }

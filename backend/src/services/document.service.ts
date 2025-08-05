@@ -216,7 +216,7 @@ export class DocumentService {
         }
       });
       
-      logger.info(`Document created: ${document.name} (${document.id})`);
+      logger.info(`Document created: ${document.fileName} (${document.id})`);
       
       // Create notification if document is expiring soon
       if (status === 'EXPIRING') {
@@ -261,7 +261,7 @@ export class DocumentService {
         }
       });
       
-      logger.info(`Document updated: ${document.name} (${document.id})`);
+      logger.info(`Document updated: ${document.fileName} (${document.id})`);
       
       return document;
     } catch (error) {
@@ -300,7 +300,7 @@ export class DocumentService {
         where: { id }
       });
       
-      logger.info(`Document deleted: ${document.name} (${id})`);
+      logger.info(`Document deleted: ${document.fileName} (${id})`);
     } catch (error) {
       logger.error('Error deleting document:', error);
       throw error;
@@ -376,7 +376,7 @@ export class DocumentService {
     const documents = await prisma.document.findMany({
       where: {
         organizationId,
-        expiryDate: { not: null }
+        expiryDate: { not: undefined }
       }
     });
     
@@ -434,8 +434,8 @@ export class DocumentService {
         : 0;
       
       const message = daysUntilExpiry > 0
-        ? `Document "${document.name}" for ${athlete.firstName} ${athlete.lastName} expires in ${daysUntilExpiry} days`
-        : `Document "${document.name}" for ${athlete.firstName} ${athlete.lastName} has expired`;
+        ? `Document "${document.fileName}" for ${athlete.firstName} ${athlete.lastName} expires in ${daysUntilExpiry} days`
+        : `Document "${document.fileName}" for ${athlete.firstName} ${athlete.lastName} has expired`;
       
       await prisma.notification.create({
         data: {

@@ -105,12 +105,12 @@ export class TeamService {
         },
         homeMatches: {
           where: { status: 'SCHEDULED' },
-          orderBy: { matchTime: 'desc' },
+          orderBy: { time: 'desc' },
           take: 5
         },
         awayMatches: {
           where: { status: 'SCHEDULED' },
-          orderBy: { matchTime: 'desc' },
+          orderBy: { time: 'desc' },
           take: 5
         }
       }

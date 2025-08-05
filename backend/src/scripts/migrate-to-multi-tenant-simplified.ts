@@ -72,8 +72,7 @@ async function migrateToMultiTenant() {
           reports: true,
           api: true,
           customDomain: true,
-          priority: true
-        },
+                  },
         isActive: true
       }
     });

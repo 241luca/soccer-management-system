@@ -10,6 +10,9 @@ export interface CreateZoneInput {
   description?: string;
   coordinates?: any;
   athleteIds?: string[];
+  monthlyFee?: number;
+  distanceRange?: string;
+  color?: string;
 }
 
 export interface CreateBusInput {
@@ -73,17 +76,6 @@ export class TransportService {
               address: true,
               city: true
             }
-          },
-          busRoutes: {
-            include: {
-              bus: {
-                select: {
-                  id: true,
-                  name: true,
-                  plateNumber: true
-                }
-              }
-            }
           }
         },
         orderBy: {
@@ -118,11 +110,6 @@ export class TransportService {
             { lastName: 'asc' },
             { firstName: 'asc' }
           ]
-        },
-        busRoutes: {
-          include: {
-            bus: true
-          }
         }
       }
     });
@@ -157,7 +144,10 @@ export class TransportService {
           organizationId: data.organizationId,
           name: data.name,
           description: data.description,
-          coordinates: data.coordinates || {}
+          coordinates: data.coordinates || {},
+          monthlyFee: data.monthlyFee || 50.00,
+          distanceRange: data.distanceRange || '0-5km',
+          color: data.color || '#3B82F6'
         }
       });
       
@@ -200,6 +190,9 @@ export class TransportService {
           name: data.name,
           description: data.description,
           coordinates: data.coordinates,
+          monthlyFee: data.monthlyFee,
+          distanceRange: data.distanceRange,
+          color: data.color,
           updatedAt: new Date()
         }
       });
@@ -232,11 +225,6 @@ export class TransportService {
       if (zone._count.athletes > 0) {
         throw new ConflictError('Cannot delete zone with assigned athletes');
       }
-      
-      // Delete related bus routes
-      await prisma.busRoute.deleteMany({
-        where: { zones: { has: id } }
-      });
       
       await prisma.transportZone.delete({
         where: { id }
@@ -331,15 +319,17 @@ export class TransportService {
   async createBus(data: CreateBusInput): Promise<Bus> {
     try {
       // Check for duplicate plate number
-      const existing = await prisma.bus.findFirst({
-        where: {
-          organizationId: data.organizationId,
-          plateNumber: data.plateNumber
+      if (data.plateNumber) {
+        const existing = await prisma.bus.findFirst({
+          where: {
+            organizationId: data.organizationId,
+            plateNumber: data.plateNumber
+          }
+        });
+        
+        if (existing) {
+          throw new ConflictError('Bus with this plate number already exists');
         }
-      });
-      
-      if (existing) {
-        throw new ConflictError('Bus with this plate number already exists');
       }
       
       const bus = await prisma.bus.create({

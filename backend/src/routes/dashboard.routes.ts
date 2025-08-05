@@ -41,7 +41,7 @@ router.get('/stats', async (req: AuthRequest, res, next) => {
       prisma.match.count({
         where: {
           organizationId,
-          matchDate: { gte: today },
+          date: { gte: today },
           status: 'SCHEDULED'
         }
       }),

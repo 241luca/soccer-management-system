@@ -72,8 +72,7 @@ async function setupMultiTenant() {
           reports: true,
           api: true,
           customDomain: true,
-          priority: true
-        },
+                  },
         isActive: true
       }
     });

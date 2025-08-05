@@ -277,7 +277,7 @@ export class NotificationService {
     const upcomingMatches = await prisma.match.findMany({
       where: {
         organizationId,
-        matchDate: {
+        date: {
           gte: tomorrow,
           lt: dayAfter
         },
@@ -306,7 +306,7 @@ export class NotificationService {
           type: 'match_reminder',
           severity: 'info',
           title: 'Partita Domani',
-          message: `${match.homeTeam.name} vs ${match.awayTeam.name} - ${match.matchTime}${match.venue ? ` presso ${match.venue.name}` : ''}`,
+          message: `${match.homeTeam.name} vs ${match.awayTeam.name} - ${match.time}${match.venue ? ` presso ${match.venue.name}` : ''}`,
           relatedEntityType: 'match',
           relatedEntityId: match.id,
           actions: [
@@ -333,7 +333,7 @@ export class NotificationService {
     });
 
     for (const route of busRoutes) {
-      const utilization = (route.transports.length / route.bus.capacity) * 100;
+      const utilization = (route.busAthletes.length / route.bus.capacity) * 100;
       
       if (utilization >= 90) {
         // Check if notification already exists this week
@@ -355,7 +355,7 @@ export class NotificationService {
             type: 'transport_capacity',
             severity: utilization >= 100 ? 'error' : 'warning',
             title: utilization >= 100 ? 'Pulmino Sovraccarico' : 'Pulmino Quasi Pieno',
-            message: `Il percorso ${route.name} ha ${route.transports.length} persone su ${route.bus.capacity} posti disponibili (${Math.round(utilization)}%)`,
+            message: `Il percorso ${route.name} ha ${route.busAthletes.length} persone su ${route.bus.capacity} posti disponibili (${Math.round(utilization)}%)`,
             relatedEntityType: 'transport',
             relatedEntityId: route.id,
             actions: [

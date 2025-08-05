@@ -164,7 +164,7 @@ export class AdminService {
       severity: 'info',
       title: 'Impostazioni Sistema Aggiornate',
       message: 'Le impostazioni del sistema sono state modificate da un amministratore',
-      isPersistent: false
+      
     });
 
     return updatedSettings;
@@ -289,7 +289,7 @@ export class AdminService {
       severity: 'info',
       title: 'Benvenuto!',
       message: `Il tuo account è stato creato. Ruolo: ${user.role}`,
-      isPersistent: true
+      
     });
 
     return user;
@@ -521,7 +521,7 @@ export class AdminService {
     backup.busRoutes = await prisma.busRoute.findMany({
       where: { bus: { organizationId } }
     });
-    backup.athleteTransports = await prisma.athleteTransport.findMany({
+    backup.athleteTransports = await prisma.busAthlete.findMany({
       where: { athlete: { organizationId } }
     });
 
