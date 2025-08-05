@@ -1,0 +1,18 @@
+=== VERIFICA POPOLAMENTO DATABASE ===
+Data: Mar  5 Ago 2025 21:43:35 CEST
+
+1. ORGANIZZAZIONI:
+ ASD Ravenna Calcio | RAVC | t
+ Demo Soccer Club   | DEMO | t
+
+
+2. RIEPILOGO PER ORGANIZZAZIONE:
+ ASD Ravenna Calcio |      0 |       0
+ Demo Soccer Club   |      0 |       4
+
+
+3. UTENTI:
+ admin@demosoccerclub.com | ADMIN
+
+
+Popolamento completato!

@@ -1,0 +1,238 @@
+                                                Tabella "public.DocumentType"
+    Colonna     |              Tipo              | Ordinamento | Può essere null |                  Default                   
+----------------+--------------------------------+-------------+-----------------+--------------------------------------------
+ id             | integer                        |             | not null        | nextval('"DocumentType_id_seq"'::regclass)
+ organizationId | text                           |             | not null        | 
+ name           | text                           |             | not null        | 
+ category       | text                           |             | not null        | 
+ isRequired     | boolean                        |             | not null        | false
+ validityDays   | integer                        |             | not null        | 365
+ reminderDays   | integer[]                      |             |                 | ARRAY[30, 15, 7]
+ isActive       | boolean                        |             | not null        | true
+ createdAt      | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt      | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "DocumentType_pkey" PRIMARY KEY, btree (id)
+    "DocumentType_organizationId_idx" btree ("organizationId")
+    "DocumentType_organizationId_name_key" UNIQUE, btree ("organizationId", name)
+Vincoli di integrità referenziale:
+    "DocumentType_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+Referenziato da:
+    TABLE ""Document"" CONSTRAINT "Document_documentTypeId_fkey" FOREIGN KEY ("documentTypeId") REFERENCES "DocumentType"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+                                                Tabella "public.PaymentType"
+    Colonna     |              Tipo              | Ordinamento | Può essere null |                  Default                  
+----------------+--------------------------------+-------------+-----------------+-------------------------------------------
+ id             | integer                        |             | not null        | nextval('"PaymentType_id_seq"'::regclass)
+ organizationId | text                           |             | not null        | 
+ name           | text                           |             | not null        | 
+ category       | text                           |             | not null        | 
+ amount         | numeric(10,2)                  |             | not null        | 
+ isRecurring    | boolean                        |             | not null        | false
+ frequency      | text                           |             |                 | 
+ isActive       | boolean                        |             | not null        | true
+ createdAt      | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt      | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "PaymentType_pkey" PRIMARY KEY, btree (id)
+    "PaymentType_organizationId_idx" btree ("organizationId")
+    "PaymentType_organizationId_name_key" UNIQUE, btree ("organizationId", name)
+Vincoli di integrità referenziale:
+    "PaymentType_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+Referenziato da:
+    TABLE ""Payment"" CONSTRAINT "Payment_paymentTypeId_fkey" FOREIGN KEY ("paymentTypeId") REFERENCES "PaymentType"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+                                          Tabella "public.Document"
+    Colonna     |              Tipo              | Ordinamento | Può essere null |          Default          
+----------------+--------------------------------+-------------+-----------------+---------------------------
+ id             | text                           |             | not null        | 
+ athleteId      | text                           |             | not null        | 
+ documentTypeId | integer                        |             | not null        | 
+ fileUrl        | text                           |             |                 | 
+ fileName       | text                           |             |                 | 
+ fileSize       | integer                        |             |                 | 
+ mimeType       | text                           |             |                 | 
+ issueDate      | date                           |             | not null        | 
+ expiryDate     | date                           |             | not null        | 
+ status         | "DocumentStatus"               |             | not null        | 'VALID'::"DocumentStatus"
+ notes          | text                           |             |                 | 
+ uploadedById   | text                           |             | not null        | 
+ createdAt      | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt      | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "Document_pkey" PRIMARY KEY, btree (id)
+    "Document_athleteId_idx" btree ("athleteId")
+    "Document_expiryDate_idx" btree ("expiryDate")
+    "Document_status_idx" btree (status)
+Vincoli di integrità referenziale:
+    "Document_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "Athlete"(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "Document_documentTypeId_fkey" FOREIGN KEY ("documentTypeId") REFERENCES "DocumentType"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    "Document_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+                                           Tabella "public.Payment"
+    Colonna     |              Tipo              | Ordinamento | Può essere null |          Default           
+----------------+--------------------------------+-------------+-----------------+----------------------------
+ id             | text                           |             | not null        | 
+ organizationId | text                           |             | not null        | 
+ athleteId      | text                           |             | not null        | 
+ paymentTypeId  | integer                        |             | not null        | 
+ amount         | numeric(10,2)                  |             | not null        | 
+ dueDate        | date                           |             | not null        | 
+ paidDate       | date                           |             |                 | 
+ status         | "PaymentStatus"                |             | not null        | 'PENDING'::"PaymentStatus"
+ paymentMethod  | text                           |             |                 | 
+ transactionId  | text                           |             |                 | 
+ notes          | text                           |             |                 | 
+ createdById    | text                           |             | not null        | 
+ createdAt      | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt      | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "Payment_pkey" PRIMARY KEY, btree (id)
+    "Payment_athleteId_idx" btree ("athleteId")
+    "Payment_dueDate_idx" btree ("dueDate")
+    "Payment_status_idx" btree (status)
+Vincoli di integrità referenziale:
+    "Payment_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "Athlete"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    "Payment_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    "Payment_paymentTypeId_fkey" FOREIGN KEY ("paymentTypeId") REFERENCES "PaymentType"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+                                                Tabella "public.Venue"
+    Colonna     |              Tipo              | Ordinamento | Può essere null |               Default               
+----------------+--------------------------------+-------------+-----------------+-------------------------------------
+ id             | integer                        |             | not null        | nextval('"Venue_id_seq"'::regclass)
+ organizationId | text                           |             | not null        | 
+ name           | text                           |             | not null        | 
+ address        | text                           |             |                 | 
+ city           | text                           |             |                 | 
+ capacity       | integer                        |             |                 | 
+ surfaceType    | text                           |             |                 | 
+ facilities     | text                           |             |                 | 
+ latitude       | numeric(10,8)                  |             |                 | 
+ longitude      | numeric(11,8)                  |             |                 | 
+ isActive       | boolean                        |             | not null        | true
+ createdAt      | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt      | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "Venue_pkey" PRIMARY KEY, btree (id)
+    "Venue_organizationId_idx" btree ("organizationId")
+    "Venue_organizationId_name_key" UNIQUE, btree ("organizationId", name)
+Vincoli di integrità referenziale:
+    "Venue_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+Referenziato da:
+    TABLE ""Match"" CONSTRAINT "Match_venueId_fkey" FOREIGN KEY ("venueId") REFERENCES "Venue"(id) ON UPDATE CASCADE ON DELETE SET NULL
+
+                                     Tabella "public.StaffMember"
+     Colonna      |              Tipo              | Ordinamento | Può essere null |      Default      
+------------------+--------------------------------+-------------+-----------------+-------------------
+ id               | text                           |             | not null        | 
+ organizationId   | text                           |             | not null        | 
+ teamId           | text                           |             |                 | 
+ firstName        | text                           |             | not null        | 
+ lastName         | text                           |             | not null        | 
+ role             | text                           |             | not null        | 
+ email            | text                           |             |                 | 
+ phone            | text                           |             |                 | 
+ photoUrl         | text                           |             |                 | 
+ qualifications   | text[]                         |             |                 | 
+ startDate        | date                           |             |                 | 
+ endDate          | date                           |             |                 | 
+ salary           | numeric(10,2)                  |             |                 | 
+ contractType     | text                           |             |                 | 
+ paymentFrequency | text                           |             |                 | 
+ isActive         | boolean                        |             | not null        | true
+ createdAt        | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt        | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "StaffMember_pkey" PRIMARY KEY, btree (id)
+    "StaffMember_organizationId_idx" btree ("organizationId")
+    "StaffMember_role_idx" btree (role)
+    "StaffMember_teamId_idx" btree ("teamId")
+Vincoli di integrità referenziale:
+    "StaffMember_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    "StaffMember_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"(id) ON UPDATE CASCADE ON DELETE SET NULL
+
+                                        Tabella "public.Sponsor"
+      Colonna      |              Tipo              | Ordinamento | Può essere null |      Default      
+-------------------+--------------------------------+-------------+-----------------+-------------------
+ id                | text                           |             | not null        | 
+ organizationId    | text                           |             | not null        | 
+ name              | text                           |             | not null        | 
+ logoUrl           | text                           |             |                 | 
+ website           | text                           |             |                 | 
+ contactName       | text                           |             |                 | 
+ contactEmail      | text                           |             |                 | 
+ contactPhone      | text                           |             |                 | 
+ sponsorType       | text                           |             | not null        | 
+ contractStartDate | date                           |             |                 | 
+ contractEndDate   | date                           |             |                 | 
+ annualAmount      | numeric(10,2)                  |             |                 | 
+ description       | text                           |             |                 | 
+ visibility        | text[]                         |             |                 | 
+ notes             | text                           |             |                 | 
+ isActive          | boolean                        |             | not null        | true
+ createdAt         | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt         | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "Sponsor_pkey" PRIMARY KEY, btree (id)
+    "Sponsor_contractEndDate_idx" btree ("contractEndDate")
+    "Sponsor_organizationId_idx" btree ("organizationId")
+    "Sponsor_sponsorType_idx" btree ("sponsorType")
+Vincoli di integrità referenziale:
+    "Sponsor_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+                                            Tabella "public.Match"
+    Colonna     |              Tipo              | Ordinamento | Può essere null |          Default           
+----------------+--------------------------------+-------------+-----------------+----------------------------
+ id             | text                           |             | not null        | 
+ organizationId | text                           |             | not null        | 
+ competitionId  | integer                        |             |                 | 
+ venueId        | integer                        |             |                 | 
+ homeTeamId     | text                           |             | not null        | 
+ awayTeamId     | text                           |             | not null        | 
+ date           | timestamp(3) without time zone |             | not null        | 
+ time           | time without time zone         |             |                 | 
+ status         | "MatchStatus"                  |             | not null        | 'SCHEDULED'::"MatchStatus"
+ homeScore      | integer                        |             |                 | 
+ awayScore      | integer                        |             |                 | 
+ notes          | text                           |             |                 | 
+ createdAt      | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt      | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "Match_pkey" PRIMARY KEY, btree (id)
+    "Match_date_idx" btree (date)
+    "Match_status_idx" btree (status)
+Vincoli di integrità referenziale:
+    "Match_awayTeamId_fkey" FOREIGN KEY ("awayTeamId") REFERENCES "Team"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    "Match_competitionId_fkey" FOREIGN KEY ("competitionId") REFERENCES "Competition"(id) ON UPDATE CASCADE ON DELETE SET NULL
+    "Match_homeTeamId_fkey" FOREIGN KEY ("homeTeamId") REFERENCES "Team"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    "Match_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    "Match_venueId_fkey" FOREIGN KEY ("venueId") REFERENCES "Venue"(id) ON UPDATE CASCADE ON DELETE SET NULL
+Referenziato da:
+    TABLE ""MatchRoster"" CONSTRAINT "MatchRoster_matchId_fkey" FOREIGN KEY ("matchId") REFERENCES "Match"(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE ""MatchStat"" CONSTRAINT "MatchStat_matchId_fkey" FOREIGN KEY ("matchId") REFERENCES "Match"(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+                                     Tabella "public.Notification"
+      Colonna      |              Tipo              | Ordinamento | Può essere null |      Default      
+-------------------+--------------------------------+-------------+-----------------+-------------------
+ id                | text                           |             | not null        | 
+ organizationId    | text                           |             | not null        | 
+ userId            | text                           |             |                 | 
+ type              | text                           |             | not null        | 
+ severity          | text                           |             | not null        | 'info'::text
+ title             | text                           |             | not null        | 
+ message           | text                           |             | not null        | 
+ isRead            | boolean                        |             | not null        | false
+ isPersistent      | boolean                        |             | not null        | true
+ relatedEntityType | text                           |             |                 | 
+ relatedEntityId   | text                           |             |                 | 
+ actions           | jsonb                          |             | not null        | '[]'::jsonb
+ expiresAt         | timestamp(3) without time zone |             |                 | 
+ createdAt         | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+Indici:
+    "Notification_pkey" PRIMARY KEY, btree (id)
+    "Notification_expiresAt_idx" btree ("expiresAt")
+    "Notification_userId_isRead_idx" btree ("userId", "isRead")
+Vincoli di integrità referenziale:
+    "Notification_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE SET NULL
+

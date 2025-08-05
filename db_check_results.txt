@@ -1,0 +1,24 @@
+=== VERIFICA DATABASE ===
+Data: Mar  5 Ago 2025 21:36:52 CEST
+
+1. ORGANIZZAZIONI:
+ c84fcaaf-4e94-4f42-b901-a080c1f2280e | Demo Soccer Club | DEMO | t
+
+
+2. CONTEGGIO ATLETI:
+     0
+
+
+3. ATLETI PER ORGANIZZAZIONE:
+ Demo Soccer Club |          0
+
+
+4. SQUADRE:
+     4
+
+
+5. SUPER ADMIN:
+ 4d63f7c3-602a-44f9-96a0-73894b1f1078 | superadmin@soccermanager.com
+
+
+Verifica completata.

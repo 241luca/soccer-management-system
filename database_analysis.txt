@@ -1,0 +1,387 @@
+=== ANALISI COMPLETA DATABASE SOCCER MANAGEMENT ===
+Data: Mar  5 Ago 2025 21:58:59 CEST
+=========================================
+
+
+=== TABELLA: Organization ===
+Numero record:      2
+
+Primi 5 record:
+                  id                  |        name        | code |                                                   logoUrl                                                   | settings |                       fullName                       |       address       |  city   | province | postalCode | country |      phone      |          email           |           website           |    fiscalCode    |  vatNumber  | foundedYear | federationNumber | iban | bankName | primaryColor | secondaryColor |                   description                   | presidentName |        presidentEmail        | presidentPhone  | secretaryName |        secretaryEmail        | secretaryPhone  |           socialFacebook            | socialInstagram | socialTwitter | socialYoutube | subdomain |     plan     | maxUsers | maxAthletes | maxTeams | isActive | isTrial | trialEndsAt | billingEmail | customDomain |        createdAt        |        updatedAt        
+--------------------------------------+--------------------+------+-------------------------------------------------------------------------------------------------------------+----------+------------------------------------------------------+---------------------+---------+----------+------------+---------+-----------------+--------------------------+-----------------------------+------------------+-------------+-------------+------------------+------+----------+--------------+----------------+-------------------------------------------------+---------------+------------------------------+-----------------+---------------+------------------------------+-----------------+-------------------------------------+-----------------+---------------+---------------+-----------+--------------+----------+-------------+----------+----------+---------+-------------+--------------+--------------+-------------------------+-------------------------
+ c84fcaaf-4e94-4f42-b901-a080c1f2280e | Demo Soccer Club   | DEMO |                                                                                                             | {}       | Associazione Sportiva Demo Soccer Club               | Via dello Sport 123 | Milano  | MI       | 20100      | IT      | +39 02 12345678 | info@demosoccerclub.it   | www.demosoccerclub.it       | DMOSCC90A01F205X | 12345678901 |        1990 | MI12345          |      |          | #0066CC      | #FFFFFF        | Club storico di Milano con tradizione giovanile | Mario Rossi   | presidente@demosoccerclub.it | +39 333 1234567 | Luigi Bianchi | segreteria@demosoccerclub.it | +39 333 7654321 | https://facebook.com/demosoccerclub | @demosoccerclub |               |               | demo      | Pro          |       50 |         500 |       20 | t        | f       |             |              |              | 2025-08-05 14:31:47.138 | 2025-08-05 14:31:47.138
+ a1b2c3d4-e5f6-7890-abcd-ef1234567890 | ASD Ravenna Calcio | RAVC | https://ui-avatars.com/api/?name=Ravenna+Calcio&background=DC2626&color=fff&size=200&rounded=true&bold=true | {}       | Associazione Sportiva Dilettantistica Ravenna Calcio | Via Calcio 100      | Ravenna | RA       | 48121      | IT      | +39 0544 987654 | info@asdravennacalcio.it | https://asdravennacalcio.it |                  |             |             |                  |      |          | #DC2626      | #7F1D1D        |                                                 |               |                              |                 |               |                              |                 |                                     |                 |               |               | ravenna   | professional |       50 |         300 |       15 | t        | f       |             |              |              | 2025-08-05 21:43:12.421 | 2025-08-05 21:43:12.421
+(2 righe)
+
+
+Struttura tabella:
+                                          Tabella "public.Organization"
+     Colonna      |              Tipo              | Ordinamento | Può essere null |           Default            
+------------------+--------------------------------+-------------+-----------------+------------------------------
+ id               | text                           |             | not null        | 
+ name             | text                           |             | not null        | 
+ code             | text                           |             | not null        | 
+ logoUrl          | text                           |             |                 | 
+ settings         | jsonb                          |             | not null        | '{}'::jsonb
+ fullName         | text                           |             |                 | 
+ address          | text                           |             |                 | 
+ city             | text                           |             |                 | 
+ province         | character varying(2)           |             |                 | 
+ postalCode       | character varying(5)           |             |                 | 
+ country          | character varying(2)           |             |                 | 'IT'::character varying
+ phone            | text                           |             |                 | 
+ email            | text                           |             |                 | 
+ website          | text                           |             |                 | 
+ fiscalCode       | text                           |             |                 | 
+ vatNumber        | text                           |             |                 | 
+ foundedYear      | integer                        |             |                 | 
+ federationNumber | text                           |             |                 | 
+ iban             | text                           |             |                 | 
+ bankName         | text                           |             |                 | 
+ primaryColor     | character varying(7)           |             |                 | '#3B82F6'::character varying
+ secondaryColor   | character varying(7)           |             |                 | '#1E40AF'::character varying
+ description      | text                           |             |                 | 
+ presidentName    | text                           |             |                 | 
+ presidentEmail   | text                           |             |                 | 
+ presidentPhone   | text                           |             |                 | 
+ secretaryName    | text                           |             |                 | 
+ secretaryEmail   | text                           |             |                 | 
+ secretaryPhone   | text                           |             |                 | 
+ socialFacebook   | text                           |             |                 | 
+ socialInstagram  | text                           |             |                 | 
+ socialTwitter    | text                           |             |                 | 
+ socialYoutube    | text                           |             |                 | 
+ subdomain        | text                           |             |                 | 
+ plan             | text                           |             | not null        | 'basic'::text
+ maxUsers         | integer                        |             | not null        | 10
+ maxAthletes      | integer                        |             | not null        | 100
+ maxTeams         | integer                        |             | not null        | 10
+ isActive         | boolean                        |             | not null        | true
+ isTrial          | boolean                        |             | not null        | true
+ trialEndsAt      | timestamp(3) without time zone |             |                 | 
+ billingEmail     | text                           |             |                 | 
+ customDomain     | text                           |             |                 | 
+ createdAt        | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt        | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "Organization_pkey" PRIMARY KEY, btree (id)
+    "Organization_code_key" UNIQUE, btree (code)
+    "Organization_customDomain_key" UNIQUE, btree ("customDomain")
+    "Organization_federationNumber_idx" btree ("federationNumber")
+    "Organization_fiscalCode_idx" btree ("fiscalCode")
+    "Organization_subdomain_key" UNIQUE, btree (subdomain)
+    "Organization_vatNumber_idx" btree ("vatNumber")
+Referenziato da:
+    TABLE ""Athlete"" CONSTRAINT "Athlete_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""AuditLog"" CONSTRAINT "AuditLog_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Bus"" CONSTRAINT "Bus_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Competition"" CONSTRAINT "Competition_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""DocumentType"" CONSTRAINT "DocumentType_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Match"" CONSTRAINT "Match_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Notification"" CONSTRAINT "Notification_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""OrganizationDocument"" CONSTRAINT "OrganizationDocument_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""OrganizationInvitation"" CONSTRAINT "OrganizationInvitation_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""PaymentType"" CONSTRAINT "PaymentType_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Position"" CONSTRAINT "Position_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Role"" CONSTRAINT "Role_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Sponsor"" CONSTRAINT "Sponsor_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""StaffMember"" CONSTRAINT "StaffMember_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""TeamKit"" CONSTRAINT "TeamKit_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Team"" CONSTRAINT "Team_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""TransportZone"" CONSTRAINT "TransportZone_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""UserOrganization"" CONSTRAINT "UserOrganization_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""User"" CONSTRAINT "User_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE SET NULL
+    TABLE ""Venue"" CONSTRAINT "Venue_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+
+
+=== TABELLA: User ===
+Numero record:      1
+
+Primi 5 record:
+                  id                  |          email           |                         passwordHash                         | role  | firstName | lastName |      phone      |            organizationId            | isActive | lastLogin | failedLoginAttempts | lockedUntil |        createdAt        |        updatedAt        
+--------------------------------------+--------------------------+--------------------------------------------------------------+-------+-----------+----------+-----------------+--------------------------------------+----------+-----------+---------------------+-------------+-------------------------+-------------------------
+ 21038e8d-fadd-4120-aef9-2b005b9830bd | admin@demosoccerclub.com | $2a$10$BtRb1ipt9xbwhIVHdap5g.EflXClsKpc/QsCxxcnIB8j.SEa.I4B6 | ADMIN | Admin     | Demo     | +39 333 9999999 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | t        |           |                   0 |             | 2025-08-05 14:31:47.284 | 2025-08-05 14:31:47.284
+(1 riga)
+
+
+Struttura tabella:
+                                           Tabella "public.User"
+       Colonna       |              Tipo              | Ordinamento | Può essere null |       Default       
+---------------------+--------------------------------+-------------+-----------------+---------------------
+ id                  | text                           |             | not null        | 
+ email               | text                           |             | not null        | 
+ passwordHash        | text                           |             | not null        | 
+ role                | "UserRole"                     |             | not null        | 'STAFF'::"UserRole"
+ firstName           | text                           |             | not null        | 
+ lastName            | text                           |             | not null        | 
+ phone               | text                           |             |                 | 
+ organizationId      | text                           |             |                 | 
+ isActive            | boolean                        |             | not null        | true
+ lastLogin           | timestamp(3) without time zone |             |                 | 
+ failedLoginAttempts | integer                        |             | not null        | 0
+ lockedUntil         | timestamp(3) without time zone |             |                 | 
+ createdAt           | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt           | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "User_pkey" PRIMARY KEY, btree (id)
+    "User_email_idx" btree (email)
+    "User_email_key" UNIQUE, btree (email)
+    "User_organizationId_idx" btree ("organizationId")
+Vincoli di integrità referenziale:
+    "User_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE SET NULL
+Referenziato da:
+    TABLE ""AuditLog"" CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Document"" CONSTRAINT "Document_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Notification"" CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE SET NULL
+    TABLE ""OrganizationDocument"" CONSTRAINT "OrganizationDocument_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""OrganizationInvitation"" CONSTRAINT "OrganizationInvitation_invitedById_fkey" FOREIGN KEY ("invitedById") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Payment"" CONSTRAINT "Payment_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""UserOrganization"" CONSTRAINT "UserOrganization_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+
+
+=== TABELLA: SuperAdmin ===
+Numero record:      1
+
+Primi 5 record:
+                  id                  |            email             |                         passwordHash                         | firstName | lastName | isActive |       lastLogin        |        createdAt        |        updatedAt        
+--------------------------------------+------------------------------+--------------------------------------------------------------+-----------+----------+----------+------------------------+-------------------------+-------------------------
+ 4d63f7c3-602a-44f9-96a0-73894b1f1078 | superadmin@soccermanager.com | $2a$10$Bfi.vmX./Abx.DGAG7rSkuwX9EURVkMaoYuP3R7ht59NFSO2S/Fim | Super     | Admin    | t        | 2025-08-05 19:21:31.85 | 2025-08-05 15:55:50.158 | 2025-08-05 19:21:31.851
+(1 riga)
+
+
+
+=== TABELLA: Team ===
+Numero record:      4
+
+Primi 5 record:
+                  id                  |            organizationId            |     name      |   category    |  season   | minAge | maxAge |  budget  | isActive |        createdAt        |        updatedAt        
+--------------------------------------+--------------------------------------+---------------+---------------+-----------+--------+--------+----------+----------+-------------------------+-------------------------
+ 01730518-3fec-4e7d-9b41-d1b59c5e212e | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Under 15      | Giovanissimi  | 2024-2025 |     13 |     15 | 50000.00 | t        | 2025-08-05 14:31:47.309 | 2025-08-05 14:31:47.309
+ 523aaf89-63f2-410e-a293-0dfc6acaee7b | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Under 17      | Allievi       | 2024-2025 |     15 |     17 | 50000.00 | t        | 2025-08-05 14:31:47.312 | 2025-08-05 14:31:47.312
+ 1d4b6e10-80a0-407f-8efa-c20acfa73125 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Under 19      | Juniores      | 2024-2025 |     17 |     19 | 50000.00 | t        | 2025-08-05 14:31:47.313 | 2025-08-05 14:31:47.313
+ c45d73bf-4e49-4bb4-a125-66e022be1f55 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Prima Squadra | Prima Squadra | 2024-2025 |     16 |     99 | 50000.00 | t        | 2025-08-05 14:31:47.314 | 2025-08-05 14:31:47.314
+(4 righe)
+
+
+Struttura tabella:
+                                        Tabella "public.Team"
+    Colonna     |              Tipo              | Ordinamento | Può essere null |      Default      
+----------------+--------------------------------+-------------+-----------------+-------------------
+ id             | text                           |             | not null        | 
+ organizationId | text                           |             | not null        | 
+ name           | text                           |             | not null        | 
+ category       | text                           |             | not null        | 
+ season         | text                           |             | not null        | 
+ minAge         | integer                        |             | not null        | 
+ maxAge         | integer                        |             | not null        | 
+ budget         | numeric(10,2)                  |             | not null        | 0
+ isActive       | boolean                        |             | not null        | true
+ createdAt      | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt      | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "Team_pkey" PRIMARY KEY, btree (id)
+    "Team_organizationId_idx" btree ("organizationId")
+    "Team_organizationId_name_season_key" UNIQUE, btree ("organizationId", name, season)
+Vincoli di integrità referenziale:
+    "Team_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+Referenziato da:
+    TABLE ""Athlete"" CONSTRAINT "Athlete_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"(id) ON UPDATE CASCADE ON DELETE SET NULL
+    TABLE ""Match"" CONSTRAINT "Match_awayTeamId_fkey" FOREIGN KEY ("awayTeamId") REFERENCES "Team"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Match"" CONSTRAINT "Match_homeTeamId_fkey" FOREIGN KEY ("homeTeamId") REFERENCES "Team"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""StaffMember"" CONSTRAINT "StaffMember_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"(id) ON UPDATE CASCADE ON DELETE SET NULL
+    TABLE ""TeamKit"" CONSTRAINT "TeamKit_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"(id) ON UPDATE CASCADE ON DELETE SET NULL
+
+
+
+=== TABELLA: Athlete ===
+Numero record:      0
+
+Struttura tabella:
+                                           Tabella "public.Athlete"
+     Colonna     |              Tipo              | Ordinamento | Può essere null |          Default          
+-----------------+--------------------------------+-------------+-----------------+---------------------------
+ id              | text                           |             | not null        | 
+ organizationId  | text                           |             | not null        | 
+ teamId          | text                           |             |                 | 
+ firstName       | text                           |             | not null        | 
+ lastName        | text                           |             | not null        | 
+ birthDate       | date                           |             | not null        | 
+ fiscalCode      | text                           |             |                 | 
+ email           | text                           |             |                 | 
+ phone           | text                           |             |                 | 
+ address         | text                           |             |                 | 
+ city            | text                           |             |                 | 
+ province        | character varying(2)           |             |                 | 
+ postalCode      | character varying(5)           |             |                 | 
+ latitude        | numeric(10,8)                  |             |                 | 
+ longitude       | numeric(11,8)                  |             |                 | 
+ jerseyNumber    | integer                        |             |                 | 
+ positionId      | integer                        |             |                 | 
+ status          | "AthleteStatus"                |             | not null        | 'ACTIVE'::"AthleteStatus"
+ usesTransport   | boolean                        |             | not null        | false
+ transportZoneId | text                           |             |                 | 
+ needsPromotion  | boolean                        |             | not null        | false
+ notes           | text                           |             |                 | 
+ createdAt       | timestamp(3) without time zone |             | not null        | CURRENT_TIMESTAMP
+ updatedAt       | timestamp(3) without time zone |             | not null        | 
+Indici:
+    "Athlete_pkey" PRIMARY KEY, btree (id)
+    "Athlete_fiscalCode_key" UNIQUE, btree ("fiscalCode")
+    "Athlete_lastName_firstName_idx" btree ("lastName", "firstName")
+    "Athlete_organizationId_idx" btree ("organizationId")
+    "Athlete_teamId_idx" btree ("teamId")
+    "Athlete_teamId_jerseyNumber_key" UNIQUE, btree ("teamId", "jerseyNumber")
+Vincoli di integrità referenziale:
+    "Athlete_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    "Athlete_positionId_fkey" FOREIGN KEY ("positionId") REFERENCES "Position"(id) ON UPDATE CASCADE ON DELETE SET NULL
+    "Athlete_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"(id) ON UPDATE CASCADE ON DELETE SET NULL
+    "Athlete_transportZoneId_fkey" FOREIGN KEY ("transportZoneId") REFERENCES "TransportZone"(id) ON UPDATE CASCADE ON DELETE SET NULL
+Referenziato da:
+    TABLE ""BusAthlete"" CONSTRAINT "BusAthlete_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "Athlete"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Document"" CONSTRAINT "Document_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "Athlete"(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE ""MatchRoster"" CONSTRAINT "MatchRoster_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "Athlete"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""MatchStat"" CONSTRAINT "MatchStat_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "Athlete"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    TABLE ""Payment"" CONSTRAINT "Payment_athleteId_fkey" FOREIGN KEY ("athleteId") REFERENCES "Athlete"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+
+
+
+=== TABELLA: TransportZone ===
+Numero record:      4
+
+Primi 5 record:
+                  id                  |            organizationId            |      name      |                description                | distanceRange | monthlyFee |  color  | coordinates | isActive |        createdAt        |        updatedAt        
+--------------------------------------+--------------------------------------+----------------+-------------------------------------------+---------------+------------+---------+-------------+----------+-------------------------+-------------------------
+ f1c4331a-8c6b-4712-830d-65c1b33cfb09 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Centro         | Zona Centro - Tariffa mensile €30         | 0-5km         |      30.00 | #4CAF50 |             | t        | 2025-08-05 14:31:47.316 | 2025-08-05 14:31:47.316
+ 5c7d97da-d3ab-46c1-b102-ddff5ccb8cc6 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Periferia Nord | Zona Periferia Nord - Tariffa mensile €50 | 5-10km        |      50.00 | #2196F3 |             | t        | 2025-08-05 14:31:47.318 | 2025-08-05 14:31:47.318
+ c1c1a755-9d41-442f-97b4-bb87f232c37d | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Periferia Sud  | Zona Periferia Sud - Tariffa mensile €50  | 5-10km        |      50.00 | #FF9800 |             | t        | 2025-08-05 14:31:47.32  | 2025-08-05 14:31:47.32
+ 20e7489a-ef15-4bda-ba25-3753ada4ec46 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Extra Urbano   | Zona Extra Urbano - Tariffa mensile €70   | 10+km         |      70.00 | #F44336 |             | t        | 2025-08-05 14:31:47.321 | 2025-08-05 14:31:47.321
+(4 righe)
+
+
+
+=== TABELLA: Bus ===
+Numero record:      3
+
+Primi 5 record:
+                  id                  |            organizationId            |   name    | capacity | plateNumber |   driverName   |   driverPhone   | notes | isActive |        createdAt        |        updatedAt        
+--------------------------------------+--------------------------------------+-----------+----------+-------------+----------------+-----------------+-------+----------+-------------------------+-------------------------
+ 9a808e83-77c7-4b3e-a13c-298a5053ed9e | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Pulmino 1 |       15 | MI123AB     | Giovanni Verdi | +39 333 6922041 |       | t        | 2025-08-05 14:31:47.323 | 2025-08-05 14:31:47.323
+ ea647946-aa04-4f77-9f3a-cb9fc09e8467 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Pulmino 2 |       20 | MI456CD     | Paolo Neri     | +39 333 3035084 |       | t        | 2025-08-05 14:31:47.327 | 2025-08-05 14:31:47.327
+ a5f67ddc-7a14-401e-82c8-183e40a3e7ef | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Pulmino 3 |       15 | MI789EF     | Marco Blu      | +39 333 2958957 |       | t        | 2025-08-05 14:31:47.334 | 2025-08-05 14:31:47.334
+(3 righe)
+
+
+
+=== TABELLA: BusRoute ===
+Numero record:      0
+
+
+=== TABELLA: BusAthlete ===
+Numero record:      0
+
+
+=== TABELLA: Match ===
+Numero record:      0
+
+
+=== TABELLA: Venue ===
+Numero record:      0
+
+
+=== TABELLA: MatchRoster ===
+Numero record:      0
+
+
+=== TABELLA: MatchStat ===
+Numero record:      0
+
+
+=== TABELLA: Position ===
+Numero record:      4
+
+Primi 5 record:
+ id |            organizationId            |      name      | description | sortOrder | isActive |        createdAt        |        updatedAt        
+----+--------------------------------------+----------------+-------------+-----------+----------+-------------------------+-------------------------
+  1 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Portiere       |             |         1 | t        | 2025-08-05 14:31:47.296 | 2025-08-05 14:31:47.296
+  2 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Difensore      |             |         2 | t        | 2025-08-05 14:31:47.3   | 2025-08-05 14:31:47.3
+  3 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Centrocampista |             |         3 | t        | 2025-08-05 14:31:47.302 | 2025-08-05 14:31:47.302
+  4 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Attaccante     |             |         4 | t        | 2025-08-05 14:31:47.305 | 2025-08-05 14:31:47.305
+(4 righe)
+
+
+
+=== TABELLA: DocumentType ===
+Numero record:      0
+
+
+=== TABELLA: Document ===
+Numero record:      0
+
+
+=== TABELLA: PaymentType ===
+Numero record:      0
+
+
+=== TABELLA: Payment ===
+Numero record:      0
+
+
+=== TABELLA: Role ===
+Numero record:      2
+
+Primi 5 record:
+                  id                  |            organizationId            | name  |             description             |                                                                   permissions                                                                   | isSystem |        createdAt        |        updatedAt        
+--------------------------------------+--------------------------------------+-------+-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+----------+-------------------------+-------------------------
+ 50a0b8c8-0cdb-48e6-a8f3-ee646e254d96 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Admin | Amministratore con accesso completo | ["*"]                                                                                                                                           | t        | 2025-08-05 14:31:47.149 | 2025-08-05 14:31:47.149
+ ed88f0c0-283a-4de7-b614-0e084bcf0193 | c84fcaaf-4e94-4f42-b901-a080c1f2280e | Coach | Allenatore con accesso alle squadre | ["athlete.view", "athlete.create", "athlete.update", "team.view", "team.update", "match.view", "match.create", "match.update", "document.view"] | t        | 2025-08-05 14:31:47.153 | 2025-08-05 14:31:47.153
+(2 righe)
+
+
+
+=== TABELLA: Permission ===
+Numero record: 
+
+
+=== TABELLA: RolePermission ===
+Numero record: 
+
+
+=== TABELLA: UserOrganization ===
+Numero record:      1
+
+Primi 5 record:
+                  id                  |                userId                |            organizationId            |                roleId                | isDefault |        joinedAt         
+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+-----------+-------------------------
+ 8917a0a1-a2d7-4b02-9edf-f775f6f1e26f | 21038e8d-fadd-4120-aef9-2b005b9830bd | c84fcaaf-4e94-4f42-b901-a080c1f2280e | 50a0b8c8-0cdb-48e6-a8f3-ee646e254d96 | t         | 2025-08-05 14:31:47.291
+(1 riga)
+
+
+
+=== TABELLA: Notification ===
+Numero record:      0
+
+
+=== TABELLA: RefreshToken ===
+Numero record: 
+
+
+=== ANALISI SPECIALI ===
+
+1. Organizzazioni con conteggi:
+ ASD Ravenna Calcio | a1b2c3d4-e5f6-7890-abcd-ef1234567890 | RAVC |     0 |        0 |     0
+ Demo Soccer Club   | c84fcaaf-4e94-4f42-b901-a080c1f2280e | DEMO |     4 |        0 |     1
+
+
+2. Squadre per organizzazione:
+ Demo Soccer Club | Prima Squadra | c45d73bf-4e49-4bb4-a125-66e022be1f55
+ Demo Soccer Club | Under 15      | 01730518-3fec-4e7d-9b41-d1b59c5e212e
+ Demo Soccer Club | Under 17      | 523aaf89-63f2-410e-a293-0dfc6acaee7b
+ Demo Soccer Club | Under 19      | 1d4b6e10-80a0-407f-8efa-c20acfa73125
+
+
+3. Utenti del sistema:
+
+
+=== FINE ANALISI ===
