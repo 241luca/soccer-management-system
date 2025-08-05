@@ -83,8 +83,21 @@ const OrganizationList = ({ onNavigate }) => {
   };
 
   const handleViewDetails = (orgId) => {
-    // Naviga all'anagrafica con l'ID dell'organizzazione
-    if (onNavigate) onNavigate('organization-details', { orgId });
+    // Per Super Admin, imposta l'organizzazione selezionata e vai all'anagrafica
+    if (onNavigate) {
+      // Carica i dettagli dell'organizzazione selezionata
+      const selectedOrg = organizations.find(org => org.id === orgId);
+      if (selectedOrg) {
+        // Aggiorna l'organizzazione nel localStorage
+        localStorage.setItem('organization', JSON.stringify({
+          id: selectedOrg.id,
+          name: selectedOrg.name,
+          code: selectedOrg.code
+        }));
+        // Ricarica la pagina per aggiornare il contesto
+        window.location.reload();
+      }
+    }
   };
 
   const handleEdit = (orgId) => {
@@ -226,7 +239,7 @@ const OrganizationList = ({ onNavigate }) => {
                 onClick={() => handleViewDetails(org.id)}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
-                Gestisci Anagrafica →
+                Seleziona e Gestisci →
               </button>
             </div>
           </div>

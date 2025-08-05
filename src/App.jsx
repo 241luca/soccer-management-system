@@ -51,16 +51,21 @@ const SoccerManagementApp = () => {
         api.setToken(token);
         console.log('User loaded:', userData);
         
-        // Load organization if available and not Super Admin
-        if (storedOrganization && userData.role !== 'SUPER_ADMIN' && !userData.isSuperAdmin) {
+        // Load organization if available
+        if (storedOrganization) {
           const orgData = JSON.parse(storedOrganization);
           setOrganization(orgData);
           console.log('Organization loaded:', orgData);
         } else if (userData.role === 'SUPER_ADMIN' || userData.isSuperAdmin) {
-          // Clear organization for Super Admin
-          localStorage.removeItem('organization');
-          setOrganization(null);
-          console.log('Super Admin detected - no default organization');
+          // Super Admin gets Demo organization by default
+          const demoOrg = {
+            id: '43c973a6-5e20-43af-a295-805f1d7c86b1',
+            name: 'Demo Soccer Club',
+            code: 'DEMO'
+          };
+          setOrganization(demoOrg);
+          localStorage.setItem('organization', JSON.stringify(demoOrg));
+          console.log('Super Admin - Demo organization set as default');
         }
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -194,35 +199,14 @@ const SoccerManagementApp = () => {
           />
         );
       case 'organization-details':
-        // Per Super Admin, mostra la lista delle organizzazioni se non ha selezionato un'organizzazione
-        if (user?.role === 'SUPER_ADMIN' && !selectedOrganizationId && !organization?.id) {
-          return (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-2xl font-bold mb-4">Seleziona un'organizzazione</h2>
-              <p className="text-gray-600 mb-6">Come Super Admin, devi selezionare quale organizzazione vuoi gestire.</p>
-              <button
-                onClick={() => setCurrentView('organizations')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Vai alla lista organizzazioni
-              </button>
-            </div>
-          );
-        }
-        
         return (
           <OrganizationDetails 
             organizationId={selectedOrganizationId || organization?.id}
             canEdit={user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'}
             onBack={() => {
-              // Se c'era un organizationId selezionato, torna alla lista
-              if (selectedOrganizationId) {
-                setSelectedOrganizationId(null);
-                setCurrentView('organizations');
-              } else {
-                // Altrimenti torna alle impostazioni
-                setCurrentView('settings');
-              }
+              // Torna sempre alle impostazioni
+              setSelectedOrganizationId(null);
+              setCurrentView('settings');
             }}
           />
         );

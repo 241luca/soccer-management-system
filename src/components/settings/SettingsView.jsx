@@ -9,6 +9,8 @@ import {
 
 const SettingsView = ({ user, organization, onNavigate }) => {
   const [activeTab, setActiveTab] = useState('general');
+  const [currentOrganization, setCurrentOrganization] = useState(organization);
+  const [showOrgSelector, setShowOrgSelector] = useState(false);
   const [settings, setSettings] = useState({
     // Preferenze Utente
     userPreferences: {
@@ -148,20 +150,34 @@ const SettingsView = ({ user, organization, onNavigate }) => {
             <Building2 className="h-8 w-8 text-blue-600" />
             <div>
               <h3 className="font-semibold text-gray-900">
-                {organization?.name || 'Organizzazione'}
+                {currentOrganization?.name || 'Organizzazione'}
               </h3>
               <p className="text-sm text-gray-600">
-                Per modificare i dati della società, vai all'anagrafica completa
+                {user?.role === 'SUPER_ADMIN' 
+                  ? 'Stai visualizzando i dati di questa società'
+                  : 'Per modificare i dati della società, vai all\'anagrafica completa'
+                }
               </p>
             </div>
           </div>
-          <button
-            onClick={() => onNavigate('organization-details')}
-            className="flex items-center space-x-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
-          >
-            <span>Apri Anagrafica</span>
-            <ExternalLink className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {user?.role === 'SUPER_ADMIN' && (
+              <button
+                onClick={() => onNavigate('organizations')}
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <Users className="h-4 w-4" />
+                <span>Gestisci Società</span>
+              </button>
+            )}
+            <button
+              onClick={() => onNavigate('organization-details')}
+              className="flex items-center space-x-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <span>Apri Anagrafica</span>
+              <ExternalLink className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
