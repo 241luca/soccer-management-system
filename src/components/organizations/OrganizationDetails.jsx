@@ -145,16 +145,39 @@ const OrganizationDetails = ({ organizationId, canEdit = true }) => {
         }
       }
       
-      await api.patch(url, formData, options);
+      const response = await api.patch(url, formData, options);
       
-      setSuccessMessage('Dati salvati con successo!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      // Aggiorna i dati locali con la risposta del server
+      const updatedData = response.data || response;
+      setOrganization(updatedData);
+      setFormData(updatedData);
       
-      // Reload to get updated data
-      await loadOrganizationDetails();
+      // Se abbiamo cambiato il nome dell'organizzazione corrente, aggiorna localStorage
+      if (!organizationId) {
+        const org = localStorage.getItem('organization');
+        if (org && updatedData.name) {
+          const orgData = JSON.parse(org);
+          orgData.name = updatedData.name;
+          localStorage.setItem('organization', JSON.stringify(orgData));
+        }
+      }
+      
+      setSuccessMessage('✅ Dati salvati con successo!');
+      
+      // Mostra notifica toast se disponibile
+      if (window.showToast) {
+        window.showToast('success', 'Anagrafica aggiornata con successo!');
+      }
+      
+      setTimeout(() => setSuccessMessage(''), 5000);
     } catch (error) {
       console.error('Error saving organization details:', error);
       setErrors({ general: 'Errore nel salvataggio dei dati' });
+      
+      // Mostra notifica toast di errore se disponibile
+      if (window.showToast) {
+        window.showToast('error', 'Errore nel salvataggio dei dati');
+      }
     } finally {
       setSaving(false);
     }
@@ -223,7 +246,14 @@ const OrganizationDetails = ({ organizationId, canEdit = true }) => {
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Anagrafica Società</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          Anagrafica Società
+          {organization && (
+            <span className="text-lg font-medium text-gray-600 animate-fade-in-down">
+              - {organization.name}
+            </span>
+          )}
+        </h1>
         <p className="text-gray-600 mt-1">
           Gestisci i dettagli completi della tua organizzazione
         </p>
@@ -231,16 +261,16 @@ const OrganizationDetails = ({ organizationId, canEdit = true }) => {
 
       {/* Success/Error Messages */}
       {successMessage && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center">
-          <CheckCircle className="h-5 w-5 mr-2" />
-          {successMessage}
+        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center animate-fade-in-down">
+          <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+          <span className="font-medium">{successMessage}</span>
         </div>
       )}
       
       {errors.general && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2" />
-          {errors.general}
+        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center animate-shake">
+          <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+          <span>{errors.general}</span>
         </div>
       )}
 

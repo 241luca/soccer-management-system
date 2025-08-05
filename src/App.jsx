@@ -71,6 +71,17 @@ const SoccerManagementApp = () => {
     setAuthLoading(false);
   }, []);
 
+  // Funzione globale per mostrare toast
+  useEffect(() => {
+    window.showToast = (type, message) => {
+      toast[`show${type.charAt(0).toUpperCase() + type.slice(1)}`](message);
+    };
+    
+    return () => {
+      delete window.showToast;
+    };
+  }, [toast]);
+
   const handleLogin = (loginData) => {
     console.log('Login successful:', loginData);
     // Il login può restituire sia userData che un oggetto con user e organization
