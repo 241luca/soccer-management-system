@@ -187,12 +187,9 @@ const SoccerManagementApp = () => {
       case 'settings':
         return (
           <SettingsView 
-            data={data}
-            stats={stats}
-            selectedTeam={selectedTeam}
-            setSelectedTeam={setSelectedTeam}
-            toast={toast}
-            setCurrentView={setCurrentView}
+            user={user}
+            organization={organization}
+            onNavigate={handleViewChange}
           />
         );
       case 'organization-details':
