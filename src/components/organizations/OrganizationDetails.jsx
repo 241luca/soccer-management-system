@@ -22,7 +22,12 @@ import {
   Edit2,
   Trash2,
   Home,
-  Shirt
+  Shirt,
+  Settings,
+  ExternalLink,
+  DollarSign,
+  Calendar,
+  Bell
 } from 'lucide-react';
 import { api } from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -270,10 +275,12 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
     { id: 'legal', label: 'Dati Legali', icon: Shield },
     { id: 'appearance', label: 'Aspetto', icon: Palette },
     { id: 'social', label: 'Social Media', icon: Share2 },
-    { id: 'facilities', label: 'Strutture', icon: Building2 },
-    { id: 'kits', label: 'Maglie', icon: Palette },
+    { id: 'facilities', label: 'Strutture', icon: Home },
+    { id: 'kits', label: 'Maglie', icon: Shirt },
     { id: 'staff', label: 'Staff', icon: Users },
-    { id: 'documents', label: 'Documenti', icon: FileText }
+    { id: 'sponsors', label: 'Sponsor', icon: CreditCard },
+    { id: 'documents', label: 'Documenti', icon: FileText },
+    { id: 'settings', label: 'Impostazioni', icon: Settings }
   ];
 
   return (
@@ -577,6 +584,160 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
                     disabled={!canEdit}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'sponsors' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                Sponsor e Partner
+              </h3>
+              {canEdit && (
+                <button className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Aggiungi Sponsor
+                </button>
+              )}
+            </div>
+            
+            {/* Categorie sponsor */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <DollarSign className="h-8 w-8 mx-auto mb-2 text-yellow-600" />
+                <p className="text-sm font-medium">Main Sponsor</p>
+                <p className="text-xs text-gray-500">0 sponsor</p>
+              </div>
+              <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <Shirt className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <p className="text-sm font-medium">Technical Sponsor</p>
+                <p className="text-xs text-gray-500">0 sponsor</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+                <CreditCard className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm font-medium">Partner</p>
+                <p className="text-xs text-gray-500">0 partner</p>
+              </div>
+            </div>
+            
+            {/* Placeholder per lista sponsor */}
+            <div className="text-center py-8 text-gray-500">
+              <DollarSign className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              <p>Nessuno sponsor registrato</p>
+              <p className="text-sm mt-1">Aggiungi sponsor principali, tecnici e partner commerciali</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <Settings className="h-5 w-5 mr-2" />
+                Impostazioni Avanzate
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Accedi alle impostazioni dettagliate della società per configurare notifiche, permessi, economiche e altre funzionalità.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => {
+                    if (onBack) onBack();
+                    // Naviga verso le impostazioni generali
+                    window.location.href = '#/settings';
+                  }}
+                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
+                >
+                  <div className="flex items-center">
+                    <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                      <Settings className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Impostazioni Generali</p>
+                      <p className="text-sm text-gray-500">Configura le impostazioni base</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                </button>
+                
+                <button
+                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
+                >
+                  <div className="flex items-center">
+                    <div className="p-2 bg-green-100 rounded-lg mr-3">
+                      <Bell className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Notifiche</p>
+                      <p className="text-sm text-gray-500">Gestisci le notifiche del sistema</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                </button>
+                
+                <button
+                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
+                >
+                  <div className="flex items-center">
+                    <div className="p-2 bg-purple-100 rounded-lg mr-3">
+                      <Shield className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Permessi</p>
+                      <p className="text-sm text-gray-500">Configura ruoli e permessi</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                </button>
+                
+                <button
+                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
+                >
+                  <div className="flex items-center">
+                    <div className="p-2 bg-orange-100 rounded-lg mr-3">
+                      <DollarSign className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Economiche</p>
+                      <p className="text-sm text-gray-500">Gestisci quote e pagamenti</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                </button>
+                
+                <button
+                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
+                >
+                  <div className="flex items-center">
+                    <div className="p-2 bg-red-100 rounded-lg mr-3">
+                      <Users className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Categorie</p>
+                      <p className="text-sm text-gray-500">Gestisci categorie e squadre</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                </button>
+                
+                <button
+                  className="p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between group"
+                >
+                  <div className="flex items-center">
+                    <div className="p-2 bg-gray-100 rounded-lg mr-3">
+                      <Settings className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Sistema</p>
+                      <p className="text-sm text-gray-500">Configurazioni avanzate</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                </button>
               </div>
             </div>
           </div>

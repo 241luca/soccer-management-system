@@ -128,6 +128,7 @@ model Organization {
   teamKits     TeamKit[]
   staffMembers StaffMember[]
   organizationDocuments OrganizationDocument[]
+  sponsors     Sponsor[]
   
   @@index([fiscalCode])
   @@index([vatNumber])
@@ -675,6 +676,10 @@ model TeamKit {
   manufacturer   String?
   sponsor        String?
   imageUrl       String?
+  shopUrl        String?  // Link shop online per acquisto
+  merchandiseUrl String?  // Link merchandising
+  price          Decimal? @db.Decimal(10, 2)
+  availableSizes String[]
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -702,6 +707,9 @@ model StaffMember {
   qualifications String[]
   startDate      DateTime? @db.Date
   endDate        DateTime? @db.Date
+  salary         Decimal?  @db.Decimal(10, 2)
+  contractType   String?   // full-time, part-time, volunteer, consultant
+  paymentFrequency String? // monthly, weekly, hourly, per-event
   isActive       Boolean   @default(true)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -740,4 +748,33 @@ model OrganizationDocument {
   @@index([organizationId])
   @@index([category])
   @@index([year])
+}
+
+// Sponsor
+model Sponsor {
+  id                String    @id @default(uuid())
+  organizationId    String
+  name              String
+  logoUrl           String?
+  website           String?
+  contactName       String?
+  contactEmail      String?
+  contactPhone      String?
+  sponsorType       String    // main, technical, gold, silver, bronze, partner
+  contractStartDate DateTime? @db.Date
+  contractEndDate   DateTime? @db.Date
+  annualAmount      Decimal?  @db.Decimal(10, 2)
+  description       String?   @db.Text
+  visibility        String[]  // jersey, website, stadium, materials, events
+  notes             String?   @db.Text
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([sponsorType])
+  @@index([contractEndDate])
 }
