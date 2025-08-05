@@ -191,12 +191,12 @@ router.get('/documents/:id/download',
       // Check permissions - only organization members or if document is public
       if (!document.isPublic) {
         if (user?.role !== 'SUPER_ADMIN' && 
-            user?.organizationId !== document.athlete.organizationId) {
+            user?.organizationId !== document.organizationId) {
           // Check if user has access via UserOrganization
           const hasAccess = await prisma.userOrganization.findFirst({
             where: {
               userId: user?.id || user?.userId || '',
-              organizationId: document.athlete.organizationId
+              organizationId: document.organizationId
             }
           });
           
@@ -264,7 +264,7 @@ router.put('/documents/:id',
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
-          user?.organizationId !== document.athlete.organizationId) {
+          user?.organizationId !== document.organizationId) {
         res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot modify document from another organization'
@@ -338,7 +338,7 @@ router.delete('/documents/:id',
       
       // Check permissions
       if (user?.role !== 'SUPER_ADMIN' && 
-          user?.organizationId !== document.athlete.organizationId) {
+          user?.organizationId !== document.organizationId) {
         res.status(403).json({
           error: 'Forbidden',
           message: 'Cannot delete document from another organization'

@@ -326,8 +326,8 @@ export class NotificationService {
       },
       include: {
         bus: true,
-        transports: {
-          where: { isActive: true }
+        busAthletes: {
+          where: { athlete: { status: 'ACTIVE' } }
         }
       }
     });
