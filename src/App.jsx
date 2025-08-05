@@ -258,6 +258,14 @@ const SoccerManagementApp = () => {
         );
       case 'settings':
         return (
+          <OrganizationDetails 
+            organizationId={organization?.id}
+            canEdit={user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.isSuperAdmin}
+            onBack={() => setCurrentView('dashboard')}
+          />
+        );
+      case 'system-settings':
+        return (
           <SettingsView 
             user={user}
             organization={organization}
@@ -396,7 +404,10 @@ const SoccerManagementApp = () => {
         />
       )}
       
-      <ToastContainer toasts={toast.toasts} />
+      <ToastContainer 
+        toasts={toast.toasts} 
+        onRemoveToast={(id) => toast.removeToast?.(id)} 
+      />
     </div>
   );
 };

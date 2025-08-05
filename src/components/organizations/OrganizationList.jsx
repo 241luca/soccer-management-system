@@ -10,7 +10,8 @@ import {
   Eye,
   Settings,
   CheckCircle,
-  XCircle
+  XCircle,
+  ArrowLeft
 } from 'lucide-react';
 import { api } from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -105,6 +106,19 @@ const OrganizationList = ({ onNavigate, onSelectOrganization }) => {
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <button
+        onClick={() => {
+          // Naviga indietro alle impostazioni
+          const event = new CustomEvent('navigate', { detail: { view: 'settings' } });
+          window.dispatchEvent(event);
+        }}
+        className="mb-4 flex items-center text-gray-600 hover:text-gray-900"
+      >
+        <ArrowLeft className="h-5 w-5 mr-2" />
+        <span>Torna all'Anagrafica</span>
+      </button>
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>

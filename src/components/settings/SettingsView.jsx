@@ -167,11 +167,11 @@ const SettingsView = ({ user, organization, onNavigate }) => {
                 className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
                 <Users className="h-4 w-4" />
-                <span>Gestisci Società</span>
+                <span>Cambia Società</span>
               </button>
             )}
             <button
-              onClick={() => onNavigate('organization-details')}
+              onClick={() => onNavigate('system-settings')}
               className="flex items-center space-x-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
             >
               <span>Apri Altri Dati</span>

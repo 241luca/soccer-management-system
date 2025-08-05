@@ -73,10 +73,10 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
     } catch (error) {
       console.error('Error loading organization details:', error);
       
-      // Se è un errore 403 per Super Admin, proviamo a caricare comunque i dati base
+      // Se è un errore 403 per Super Admin o Admin, proviamo a caricare comunque i dati base
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       if ((error.message?.includes('Super admin access required') || error.message?.includes('403')) && 
-          (user.role === 'SUPER_ADMIN' || user.isSuperAdmin)) {
+          (user.role === 'SUPER_ADMIN' || user.isSuperAdmin || user.role === 'Admin' || user.role === 'ADMIN')) {
         
         // Carica almeno i dati dal localStorage se disponibili
         const storedOrg = localStorage.getItem('organization');
@@ -279,8 +279,7 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
     { id: 'kits', label: 'Maglie', icon: Shirt },
     { id: 'staff', label: 'Staff', icon: Users },
     { id: 'sponsors', label: 'Sponsor', icon: CreditCard },
-    { id: 'documents', label: 'Documenti', icon: FileText },
-    { id: 'settings', label: 'Impostazioni', icon: Settings }
+    { id: 'documents', label: 'Documenti', icon: FileText }
   ];
 
   return (
@@ -311,6 +310,48 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
                 Gestisci i dettagli completi della tua organizzazione
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Organization Info Card - Prima dei tab */}
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Building2 className="h-8 w-8 text-blue-600" />
+            <div>
+              <h3 className="font-semibold text-gray-900">
+                {organization?.name || 'Organizzazione'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                Stai visualizzando i dati di questa società
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Solo per Super Admin - pulsante cambio società */}
+            {JSON.parse(localStorage.getItem('user') || '{}').role === 'SUPER_ADMIN' && (
+              <button
+                onClick={() => {
+                  const event = new CustomEvent('navigate', { detail: { view: 'organizations' } });
+                  window.dispatchEvent(event);
+                }}
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <Users className="h-4 w-4" />
+                <span>Cambia Società</span>
+              </button>
+            )}
+            <button
+              onClick={() => {
+                const event = new CustomEvent('navigate', { detail: { view: 'system-settings' } });
+                window.dispatchEvent(event);
+              }}
+              className="flex items-center space-x-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <span>Altri Dati</span>
+              <ExternalLink className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
@@ -628,38 +669,6 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
               <DollarSign className="h-12 w-12 mx-auto mb-3 text-gray-400" />
               <p>Nessuno sponsor registrato</p>
               <p className="text-sm mt-1">Aggiungi sponsor principali, tecnici e partner commerciali</p>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <Settings className="h-5 w-5 mr-2" />
-                Impostazioni Avanzate
-              </h3>
-              <p className="text-sm text-gray-600 mb-6">
-                Accedi alle impostazioni dettagliate della società per configurare notifiche, permessi, economiche e altre funzionalità.
-              </p>
-              
-              <div className="flex justify-center py-8">
-                <button
-                  onClick={() => {
-                    if (onBack) onBack();
-                    // Torna alle impostazioni
-                    setTimeout(() => {
-                      const event = new CustomEvent('navigate', { detail: { view: 'settings' } });
-                      window.dispatchEvent(event);
-                    }, 100);
-                  }}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
-                >
-                  <Settings className="h-5 w-5 mr-2" />
-                  <span>Vai alle Impostazioni</span>
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                </button>
-              </div>
             </div>
           </div>
         )}
