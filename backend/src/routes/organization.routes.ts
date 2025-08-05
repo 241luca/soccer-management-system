@@ -152,7 +152,7 @@ router.post('/current/logo',
   })
 );
 
-// Get organization details by ID (for super admin and owner with access)
+    // Get organization details by ID (for super admin and owner with access)
 router.get('/:id/details',
   authenticate,
   asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -163,11 +163,12 @@ router.get('/:id/details',
     const isSuperAdmin = user?.role === 'SUPER_ADMIN' || req.headers['x-super-admin'] === 'true';
     
     if (!isSuperAdmin && user?.organizationId !== id && user?.role !== 'Owner') {
-      return res.status(403).json({
+      res.status(403).json({
         error: 'Forbidden',
         message: 'Super admin access required',
         code: 'SUPER_ADMIN_REQUIRED'
       });
+      return;
     }
     
     // For Owner, verify they have access to this org
@@ -183,11 +184,12 @@ router.get('/:id/details',
       });
       
       if (!hasAccess) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Forbidden',
           message: 'No access to this organization',
           code: 'NO_ORG_ACCESS'
         });
+        return;
       }
     }
     
@@ -224,11 +226,12 @@ router.put('/:id',
         });
         
         if (!hasAccess) {
-          return res.status(403).json({ 
+          res.status(403).json({ 
             error: 'Forbidden',
             message: 'Insufficient permissions to modify this organization',
             code: 'INSUFFICIENT_PERMISSIONS'
           });
+          return;
         }
       }
       // Admin can only modify their own organization
@@ -236,11 +239,12 @@ router.put('/:id',
         // Admin can proceed
       }
       else {
-        return res.status(403).json({ 
+        res.status(403).json({ 
           error: 'Forbidden',
           message: 'Insufficient permissions to modify this organization',
           code: 'INSUFFICIENT_PERMISSIONS'
         });
+        return;
       }
     }
     
@@ -262,10 +266,11 @@ router.put('/:id',
       });
     } catch (error: any) {
       if (error.code === 'P2002') {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Duplicate Entry',
           message: 'Organization code already exists'
         });
+        return;
       }
       throw error;
     }
