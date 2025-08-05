@@ -21,8 +21,10 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
   const filteredAthletes = useMemo(() => {
     return data.athletes.filter(athlete => {
       const matchesSearch = !searchTerm || 
-        athlete.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        athlete.teamName.toLowerCase().includes(searchTerm.toLowerCase());
+        (athlete.firstName && athlete.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (athlete.lastName && athlete.lastName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (athlete.name && athlete.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (athlete.teamName && athlete.teamName.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesTeam = !filters.team || athlete.teamId === parseInt(filters.team);
       const matchesPosition = !filters.position || athlete.position === filters.position;
@@ -263,11 +265,16 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
-                            {athlete.name.charAt(0)}
+                            {(athlete.firstName || athlete.name || '?').charAt(0).toUpperCase()}
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{athlete.name}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {athlete.firstName && athlete.lastName 
+                              ? `${athlete.firstName} ${athlete.lastName}`
+                              : athlete.name || 'Nome non disponibile'
+                            }
+                          </div>
                           <div className="text-sm text-gray-500">{athlete.position} • #{athlete.number}</div>
                         </div>
                       </div>
@@ -358,10 +365,15 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-lg">
-                  {athlete.name.charAt(0)}
+                  {(athlete.firstName || athlete.name || '?').charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold truncate">{athlete.name}</h3>
+                  <h3 className="font-semibold truncate">
+                    {athlete.firstName && athlete.lastName 
+                      ? `${athlete.firstName} ${athlete.lastName}`
+                      : athlete.name || 'Nome non disponibile'
+                    }
+                  </h3>
                   <p className="text-sm text-gray-600">{athlete.position} • #{athlete.number}</p>
                 </div>
               </div>

@@ -5,6 +5,20 @@ Tutte le modifiche significative al Soccer Management System sono documentate in
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.0.2] - 2025-08-05
+
+### 🐛 Risolto
+- **Rimosso definitivamente CDN Tailwind**: Configurato build produzione corretto
+  - Eliminato completamente CDN da index.html
+  - Tailwind ora compilato via PostCSS
+  - Nessun warning in console
+  - Build produzione ottimizzata
+
+### 🆕 Aggiunto
+- Script `reset-app.sh` per reset completo applicazione
+- Script `quick-reset.sh` per pulizia veloce browser
+- Sezione "Reset & Fix" nel control panel
+
 ## [2.0.1] - 2025-08-05
 
 ### 🐛 Risolto
