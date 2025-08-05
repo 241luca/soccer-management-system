@@ -117,8 +117,10 @@ const SoccerManagementApp = () => {
     if (loginData.user) {
       setUser(loginData.user);
       
-      // Se è Super Admin, carica sempre i dati completi dell'organizzazione
+      // Se è Super Admin, carica sempre Demo Soccer Club come default
       if (loginData.user.role === 'SUPER_ADMIN' || loginData.user.isSuperAdmin) {
+        // Pulisci qualsiasi organizzazione precedente
+        localStorage.removeItem('organization');
         await loadDefaultOrganization();
       } else if (loginData.organization) {
         setOrganization(loginData.organization);
@@ -253,7 +255,7 @@ const SoccerManagementApp = () => {
         return (
           <OrganizationDetails 
             organizationId={selectedOrganizationId || organization?.id}
-            canEdit={user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'}
+            canEdit={user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.isSuperAdmin}
             onBack={() => {
               // Torna sempre alle impostazioni
               setSelectedOrganizationId(null);
