@@ -13,6 +13,60 @@ class ApiClient {
     this.token = localStorage.getItem('accessToken') || localStorage.getItem('token');
   }
 
+  // Helper function per pulire i dati prima di inviarli al backend
+  cleanDataForBackend(data) {
+    const cleaned = { ...data };
+    
+    // Rimuovi campi vuoti o null
+    Object.keys(cleaned).forEach(key => {
+      if (cleaned[key] === null || cleaned[key] === '' || cleaned[key] === undefined) {
+        delete cleaned[key];
+      }
+    });
+    
+    // Pulisci formato telefono (rimuovi tutto tranne numeri e +)
+    if (cleaned.phone) {
+      cleaned.phone = cleaned.phone.replace(/[^+\d]/g, '');
+    }
+    
+    // Pulisci formato CAP (solo numeri)
+    if (cleaned.postalCode) {
+      cleaned.postalCode = cleaned.postalCode.replace(/\D/g, '');
+    }
+    
+    // Converti age in birthDate se presente
+    if (cleaned.age !== undefined && !cleaned.birthDate) {
+      const birthYear = new Date().getFullYear() - cleaned.age;
+      cleaned.birthDate = `${birthYear}-01-01T00:00:00.000Z`;
+      delete cleaned.age;
+    }
+    
+    // Se birthDate è presente ma non in formato datetime, convertilo
+    if (cleaned.birthDate && !cleaned.birthDate.includes('T')) {
+      cleaned.birthDate = `${cleaned.birthDate}T00:00:00.000Z`;
+    }
+    
+    // Converti campi legacy
+    if (cleaned.number !== undefined) {
+      cleaned.jerseyNumber = cleaned.number;
+      delete cleaned.number;
+    }
+    
+    if (cleaned.usesBus !== undefined) {
+      cleaned.usesTransport = cleaned.usesBus;
+      delete cleaned.usesBus;
+    }
+    
+    // Rimuovi campi che non dovrebbero essere inviati
+    const fieldsToRemove = ['id', 'name', 'assignedBus', 'zone', 'membershipFee', 
+                           'feeStatus', 'medicalExpiry', 'insuranceExpiry', 'busFee', 
+                           'busFeeStatus', 'gamesPlayed', 'goals', 'yellowCards', 
+                           'redCards', 'position'];
+    fieldsToRemove.forEach(field => delete cleaned[field]);
+    
+    return cleaned;
+  }
+
   async request(endpoint, options = {}) {
     // Refresh token before each request
     this.refreshToken();
@@ -167,70 +221,25 @@ class ApiClient {
     });
   }
 
+  async createAthlete(data) {
+    console.log('createAthlete called with:', data);
+    
+    // Usa la funzione helper per pulire i dati
+    const cleanData = this.cleanDataForBackend(data);
+    
+    console.log('Clean data to send:', cleanData);
+    
+    return this.request('/athletes', {
+      method: 'POST',
+      body: JSON.stringify(cleanData)
+    });
+  }
+
   async updateAthlete(id, data) {
     console.log('updateAthlete called with:', { id, data });
     
-    // Log per debug dettagliato
-    console.log('Data ricevuti:', data);
-    console.log('birthDate presente?', data.birthDate);
-    console.log('birthDate include T?', data.birthDate && data.birthDate.includes('T'));
-    
-    // Converti i dati dal formato frontend al formato backend
-    const cleanData = { ...data };
-    
-    // Rimuovi campi che potrebbero causare problemi
-    delete cleanData.id; // Non inviare l'ID nel body
-    delete cleanData.name; // Campo legacy
-    delete cleanData.assignedBus; // Solo l'ID
-    delete cleanData.zone; // Solo l'ID
-    
-    // Converti age in birthDate se presente
-    if (cleanData.age !== undefined && !cleanData.birthDate) {
-      const birthYear = new Date().getFullYear() - cleanData.age;
-      // Formato datetime ISO 8601 richiesto dal backend
-      cleanData.birthDate = `${birthYear}-01-01T00:00:00.000Z`;
-      delete cleanData.age;
-    }
-    
-    // Se birthDate è presente ma non in formato datetime, convertilo
-    if (cleanData.birthDate && !cleanData.birthDate.includes('T')) {
-      cleanData.birthDate = `${cleanData.birthDate}T00:00:00.000Z`;
-    }
-    
-    // Converti number in jerseyNumber se presente
-    if (cleanData.number !== undefined) {
-      cleanData.jerseyNumber = cleanData.number;
-      delete cleanData.number;
-    }
-    
-    // Converti usesBus in usesTransport se presente
-    if (cleanData.usesBus !== undefined) {
-      cleanData.usesTransport = cleanData.usesBus;
-      delete cleanData.usesBus;
-    }
-    
-    // Rimuovi campi legacy del frontend
-    const fieldsToRemove = ['membershipFee', 'feeStatus', 'medicalExpiry', 'insuranceExpiry', 
-                           'busFee', 'busFeeStatus', 'gamesPlayed', 'goals', 'yellowCards', 'redCards',
-                           'position']; // position deve essere positionId
-    fieldsToRemove.forEach(field => delete cleanData[field]);
-    
-    // Correggi il formato del telefono (rimuovi trattini e spazi)
-    if (cleanData.phone) {
-      cleanData.phone = cleanData.phone.replace(/[^+\d]/g, '');
-    }
-    
-    // Correggi il formato del CAP (deve essere solo numeri)
-    if (cleanData.postalCode) {
-      cleanData.postalCode = cleanData.postalCode.replace(/\D/g, '');
-    }
-    
-    // Rimuovi campi vuoti o null
-    Object.keys(cleanData).forEach(key => {
-      if (cleanData[key] === null || cleanData[key] === '' || cleanData[key] === undefined) {
-        delete cleanData[key];
-      }
-    });
+    // Usa la funzione helper per pulire i dati
+    const cleanData = this.cleanDataForBackend(data);
     
     console.log('Clean data to send:', cleanData);
     console.log('Clean data JSON:', JSON.stringify(cleanData, null, 2));
