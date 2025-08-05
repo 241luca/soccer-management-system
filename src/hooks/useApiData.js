@@ -86,43 +86,47 @@ export const useApiData = () => {
       // Process athletes
       let athletesData = [];
       if (results[1].status === 'fulfilled') {
-        athletesData = results[1].value.athletes || results[1].value.data || [];
+        // L'API restituisce { data: [...], pagination: {...} }
+        athletesData = results[1].value.data || [];
+        console.log('Athletes loaded:', athletesData.length);
       }
 
       // Process teams
       let teamsData = [];
       if (results[2].status === 'fulfilled') {
-        teamsData = results[2].value.teams || results[2].value.data || [];
+        // L'API restituisce { data: [...] }
+        teamsData = results[2].value.data || [];
+        console.log('Teams loaded:', teamsData.length);
       }
 
       // Process documents
       let documentsData = [];
       if (results[3].status === 'fulfilled') {
-        documentsData = results[3].value.documents || results[3].value.data || [];
+        documentsData = results[3].value.data || [];
       }
 
       // Process payments
       let paymentsData = [];
       if (results[4].status === 'fulfilled') {
-        paymentsData = results[4].value.payments || results[4].value.data || [];
+        paymentsData = results[4].value.data || [];
       }
 
       // Process matches
       let matchesData = [];
       if (results[5].status === 'fulfilled') {
-        matchesData = results[5].value.matches || results[5].value.data || [];
+        matchesData = results[5].value.data || [];
       }
 
       // Process transport zones
       let zonesData = [];
       if (results[6].status === 'fulfilled') {
-        zonesData = results[6].value.zones || results[6].value.data || [];
+        zonesData = results[6].value.data || [];
       }
 
       // Process buses
       let busesData = [];
       if (results[7].status === 'fulfilled') {
-        busesData = results[7].value.buses || results[7].value.data || [];
+        busesData = results[7].value.data || [];
       }
 
       // Set the data
