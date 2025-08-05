@@ -58,10 +58,11 @@ export class AthleteService {
             where: { status: 'PENDING' },
             include: { paymentType: true }
           },
-          transport: {
+          transportZone: true,
+          busAthletes: {
             include: {
-              zone: true,
-              busRoute: { include: { bus: true } }
+              bus: true,
+              busRoute: true
             }
           }
         },
@@ -99,10 +100,11 @@ export class AthleteService {
           include: { paymentType: true },
           orderBy: { dueDate: 'desc' }
         },
-        transport: {
+        transportZone: true,
+        busAthletes: {
           include: {
-            zone: true,
-            busRoute: { include: { bus: true } }
+            bus: true,
+            busRoute: true
           }
         },
         matchRosters: {
@@ -115,11 +117,11 @@ export class AthleteService {
               }
             }
           },
-          orderBy: { match: { matchDate: 'desc' } },
+          orderBy: { match: { date: 'desc' } },
           take: 10
         },
         matchStats: {
-          orderBy: { match: { matchDate: 'desc' } },
+          orderBy: { match: { date: 'desc' } },
           take: 10
         }
       }
@@ -279,7 +281,7 @@ export class AthleteService {
           }
         }
       },
-      orderBy: { match: { matchDate: 'desc' } },
+      orderBy: { match: { date: 'desc' } },
       take: 5
     });
 
