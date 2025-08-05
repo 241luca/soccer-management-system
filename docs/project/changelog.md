@@ -5,6 +5,23 @@ Tutte le modifiche significative al Soccer Management System sono documentate in
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.0.1] - 2025-08-05
+
+### 🐛 Risolto
+- **Fix Tailwind CSS in produzione**: Rimosso CDN e configurato correttamente PostCSS
+  - Aggiunto @tailwind directives in index.css
+  - Rimosso script CDN da index.html
+  - Prevenuto warning in console browser
+
+- **Fix Organization ID mancante**: Risolto errore "Organization ID required" per Super Admin
+  - Aggiunto fallback automatico a Demo Soccer Club per Super Admin
+  - Migliorata gestione organization ID in api.js
+  - Fix errore 400 nelle chiamate API
+
+### 🔧 Modificato
+- Migliorata gestione token e organizzazione per utenti Super Admin
+- Aggiunto logging per debug organization ID
+
 ## [2.0.0] - 2025-08-05
 
 ### ✨ Aggiunto

@@ -38,6 +38,12 @@ class ApiClient {
       organizationId = userData.organizationId;
     }
     
+    // For Super Admin, use Demo organization if no organization is set
+    if (!organizationId && isSuperAdmin) {
+      organizationId = '43c973a6-5e20-43af-a295-805f1d7c86b1'; // Demo Soccer Club ID
+      console.log('Super Admin: Using default Demo organization ID');
+    }
+    
     // For specific organization endpoints, don't add X-Organization-ID header
     const isSpecificOrgEndpoint = endpoint.match(/^\/organizations\/[a-zA-Z0-9-]+\//);
     

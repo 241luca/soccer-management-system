@@ -160,6 +160,46 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
       setSaving(true);
       setSuccessMessage('');
       
+      // Filtra solo i campi che sono effettivamente modificabili
+      const fieldsToUpdate = {
+        name: formData.name,
+        fullName: formData.fullName,
+        description: formData.description,
+        address: formData.address,
+        city: formData.city,
+        province: formData.province,
+        postalCode: formData.postalCode,
+        country: formData.country,
+        phone: formData.phone,
+        email: formData.email,
+        website: formData.website,
+        fiscalCode: formData.fiscalCode,
+        vatNumber: formData.vatNumber,
+        iban: formData.iban,
+        bankName: formData.bankName,
+        presidentName: formData.presidentName,
+        presidentEmail: formData.presidentEmail,
+        presidentPhone: formData.presidentPhone,
+        secretaryName: formData.secretaryName,
+        secretaryEmail: formData.secretaryEmail,
+        secretaryPhone: formData.secretaryPhone,
+        primaryColor: formData.primaryColor,
+        secondaryColor: formData.secondaryColor,
+        socialFacebook: formData.socialFacebook,
+        socialInstagram: formData.socialInstagram,
+        socialTwitter: formData.socialTwitter,
+        socialYoutube: formData.socialYoutube,
+        foundedYear: formData.foundedYear ? parseInt(formData.foundedYear) : null,
+        federationNumber: formData.federationNumber
+      };
+      
+      // Rimuovi i campi null o undefined
+      Object.keys(fieldsToUpdate).forEach(key => {
+        if (fieldsToUpdate[key] === null || fieldsToUpdate[key] === undefined || fieldsToUpdate[key] === '') {
+          delete fieldsToUpdate[key];
+        }
+      });
+      
       // Se abbiamo un organizationId specifico, usiamolo nell'URL
       const url = organizationId 
         ? `/organizations/${organizationId}/details`
@@ -180,7 +220,8 @@ const OrganizationDetails = ({ organizationId, canEdit = true, onBack }) => {
         }
       }
       
-      const response = await api.patch(url, formData, options);
+      console.log('Saving organization with data:', fieldsToUpdate);
+      const response = await api.patch(url, fieldsToUpdate, options);
       
       // Aggiorna i dati locali con la risposta del server
       const updatedData = response.data || response;

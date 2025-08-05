@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from './hooks/useData';
 import { api } from './services/api';
+import { ensureOrganizationId } from './utils/ensureOrganizationId';
 
 // Components
 import LoadingScreen from './components/common/LoadingScreen';
@@ -73,6 +74,9 @@ const SoccerManagementApp = () => {
         setUser(userData);
         api.setToken(token);
         console.log('User loaded:', userData);
+        
+        // Assicurati che l'organization ID sia presente
+        ensureOrganizationId();
         
         // Load organization if available
         if (storedOrganization) {

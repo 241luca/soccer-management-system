@@ -1,6 +1,9 @@
-/* Custom CSS per Soccer Management System */
-/* Compatibile con Tailwind CDN */
+/* Tailwind CSS Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* Custom CSS per Soccer Management System */
 /* Font Import */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
