@@ -38,6 +38,29 @@ const SoccerManagementApp = () => {
   
   const { data, loading, stats, notifications, toast } = useData();
 
+  // Funzione per caricare l'organizzazione di default per Super Admin
+  const loadDefaultOrganization = async () => {
+    try {
+      const demoOrgId = '43c973a6-5e20-43af-a295-805f1d7c86b1';
+      const response = await api.get(`/organizations/${demoOrgId}/details`);
+      const orgData = response.data || response;
+      
+      setOrganization(orgData);
+      localStorage.setItem('organization', JSON.stringify(orgData));
+      console.log('Super Admin - Demo organization loaded with full details:', orgData);
+    } catch (error) {
+      console.error('Error loading default organization:', error);
+      // Fallback to basic data if API fails
+      const basicOrg = {
+        id: '43c973a6-5e20-43af-a295-805f1d7c86b1',
+        name: 'Demo Soccer Club',
+        code: 'DEMO'
+      };
+      setOrganization(basicOrg);
+      localStorage.setItem('organization', JSON.stringify(basicOrg));
+    }
+  };
+
   useEffect(() => {
     // Check if user is logged in
     const storedUser = localStorage.getItem('user');
@@ -54,8 +77,15 @@ const SoccerManagementApp = () => {
         // Load organization if available
         if (storedOrganization) {
           const orgData = JSON.parse(storedOrganization);
-          setOrganization(orgData);
-          console.log('Organization loaded:', orgData);
+          // Se è Super Admin e l'organizzazione non ha tutti i dati, ricaricala
+          if ((userData.role === 'SUPER_ADMIN' || userData.isSuperAdmin) && 
+              (!orgData.logoUrl || !orgData.fullName || !orgData.primaryColor)) {
+            console.log('Organization data incomplete, reloading...');
+            loadDefaultOrganization();
+          } else {
+            setOrganization(orgData);
+            console.log('Organization loaded:', orgData);
+          }
         } else if (userData.role === 'SUPER_ADMIN' || userData.isSuperAdmin) {
           // Super Admin gets Demo organization by default - load full details
           loadDefaultOrganization();
@@ -81,16 +111,20 @@ const SoccerManagementApp = () => {
     };
   }, [toast]);
 
-  const handleLogin = (loginData) => {
+  const handleLogin = async (loginData) => {
     console.log('Login successful:', loginData);
     // Il login può restituire sia userData che un oggetto con user e organization
     if (loginData.user) {
       setUser(loginData.user);
-      setOrganization(loginData.organization);
-      // Salva anche l'organizzazione nel localStorage
-      if (loginData.organization) {
+      
+      // Se è Super Admin, carica sempre i dati completi dell'organizzazione
+      if (loginData.user.role === 'SUPER_ADMIN' || loginData.user.isSuperAdmin) {
+        await loadDefaultOrganization();
+      } else if (loginData.organization) {
+        setOrganization(loginData.organization);
         localStorage.setItem('organization', JSON.stringify(loginData.organization));
       }
+      
       toast.showSuccess(`Benvenuto ${loginData.user.firstName || 'Utente'} ${loginData.user.lastName || ''}!`);
     } else {
       // Compatibilità con il vecchio formato
@@ -103,28 +137,6 @@ const SoccerManagementApp = () => {
     console.log('Organization switched:', switchData);
     setOrganization(switchData.organization);
     // Il componente OrganizationSwitcher già ricarica la pagina
-  };
-
-  const loadDefaultOrganization = async () => {
-    try {
-      const demoOrgId = '43c973a6-5e20-43af-a295-805f1d7c86b1';
-      const response = await api.get(`/organizations/${demoOrgId}/details`);
-      const orgData = response.data || response;
-      
-      setOrganization(orgData);
-      localStorage.setItem('organization', JSON.stringify(orgData));
-      console.log('Super Admin - Demo organization loaded with full details:', orgData);
-    } catch (error) {
-      console.error('Error loading default organization:', error);
-      // Fallback to basic data if API fails
-      const basicOrg = {
-        id: '43c973a6-5e20-43af-a295-805f1d7c86b1',
-        name: 'Demo Soccer Club',
-        code: 'DEMO'
-      };
-      setOrganization(basicOrg);
-      localStorage.setItem('organization', JSON.stringify(basicOrg));
-    }
   };
 
   const handleLogout = async () => {
