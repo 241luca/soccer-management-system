@@ -182,8 +182,14 @@ class ApiClient {
     // Converti age in birthDate se presente
     if (cleanData.age !== undefined && !cleanData.birthDate) {
       const birthYear = new Date().getFullYear() - cleanData.age;
-      cleanData.birthDate = `${birthYear}-01-01`;
+      // Formato datetime ISO 8601 richiesto dal backend
+      cleanData.birthDate = `${birthYear}-01-01T00:00:00.000Z`;
       delete cleanData.age;
+    }
+    
+    // Se birthDate è presente ma non in formato datetime, convertilo
+    if (cleanData.birthDate && !cleanData.birthDate.includes('T')) {
+      cleanData.birthDate = `${cleanData.birthDate}T00:00:00.000Z`;
     }
     
     // Converti number in jerseyNumber se presente
