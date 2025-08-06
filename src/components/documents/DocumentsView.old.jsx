@@ -1,4 +1,4 @@
-// components/documents/DocumentsView.enhanced.jsx
+// components/documents/DocumentsView.jsx
 import React, { useState, useMemo } from 'react';
 import { FileText, Clock, AlertTriangle, CheckCircle, Upload, Calendar, Filter, Download } from 'lucide-react';
 import StatusBadge from '../common/StatusBadge';
@@ -6,23 +6,12 @@ import DocumentsDashboard from './DocumentsDashboard';
 import DocumentsList from './DocumentsList';
 import ExpiryCenter from './ExpiryCenter';
 import DocumentModal from './DocumentModal';
-import { useDocuments } from '../../hooks/useCrud';
 
-const DocumentsView = ({ data, stats, selectedTeam, setCurrentView, toast }) => {
-  // Usa il nuovo hook CRUD per documenti
-  const documentsCrud = useDocuments({ 
-    toast,
-    onSuccess: async (operation) => {
-      // Ricarica i documenti dopo operazioni CRUD
-      await loadDocuments();
-    }
-  });
-
+const DocumentsView = ({ data, stats, selectedTeam, setCurrentView }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [documents, setDocuments] = useState([]);
   const [filters, setFilters] = useState({
     type: 'all',
     status: 'all',
@@ -30,66 +19,62 @@ const DocumentsView = ({ data, stats, selectedTeam, setCurrentView, toast }) => 
     expiryRange: 'all'
   });
 
-  // Carica tutti i documenti
-  const loadDocuments = async () => {
-    const result = await documentsCrud.fetchList({
-      include: ['athlete', 'team']
-    });
-    
-    if (result.success) {
-      // I documenti sono già trasformati con proprietà calcolate
-      setDocuments(result.data);
-    }
-  };
+  console.log('DocumentsView rendering with data:', data);
 
-  // Carica documenti all'avvio
-  React.useEffect(() => {
-    loadDocuments();
-  }, []);
-
-  // Documenti con informazioni aggiuntive
-  const enrichedDocuments = useMemo(() => {
-    return documents.map(doc => {
-      // Trova l'atleta associato
-      const athlete = data?.athletes?.find(a => a.id === doc.athleteId);
-      
-      return {
-        ...doc,
-        // Le proprietà trasformate sono già presenti
-        athleteName: athlete?.fullName || doc.athleteName || 'N/A',
-        teamName: athlete?.teamName || doc.teamName || 'N/A',
-        teamId: athlete?.teamId || doc.teamId,
-        // status, isExpired, isExpiring, daysUntilExpiry sono già calcolati dal backend
-      };
+  // Calcolo documenti con stati aggiornati
+  const allDocuments = useMemo(() => {
+    const docs = [];
+    data?.athletes?.forEach(athlete => {
+      athlete.documents?.forEach(doc => {
+        const today = new Date();
+        const expiryDate = new Date(doc.expiryDate);
+        const daysToExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+        
+        let status = 'valid';
+        if (daysToExpiry < 0) status = 'expired';
+        else if (daysToExpiry <= 15) status = 'critical';
+        else if (daysToExpiry <= 30) status = 'warning';
+        
+        docs.push({
+          ...doc,
+          athleteId: athlete.id,
+          athleteName: athlete.name,
+          teamName: athlete.teamName,
+          teamId: athlete.teamId,
+          daysToExpiry,
+          status
+        });
+      });
     });
-  }, [documents, data?.athletes]);
+    return docs.sort((a, b) => a.daysToExpiry - b.daysToExpiry);
+  }, [data]);
 
   // Filtri applicati
   const filteredDocuments = useMemo(() => {
-    return enrichedDocuments.filter(doc => {
+    return allDocuments.filter(doc => {
       if (filters.type !== 'all' && doc.type !== filters.type) return false;
       if (filters.status !== 'all' && doc.status !== filters.status) return false;
       if (filters.team !== 'all' && doc.teamId !== parseInt(filters.team)) return false;
       
       if (filters.expiryRange !== 'all') {
         const days = parseInt(filters.expiryRange);
-        if (!doc.daysUntilExpiry || doc.daysUntilExpiry > days) return false;
+        if (doc.daysToExpiry > days) return false;
       }
       
       return true;
     });
-  }, [enrichedDocuments, filters]);
+  }, [allDocuments, filters]);
 
   // Statistiche documenti
   const documentStats = useMemo(() => {
-    const total = enrichedDocuments.length;
-    const valid = enrichedDocuments.filter(d => d.status === 'valid' || d.status === 'VALID').length;
-    const warning = enrichedDocuments.filter(d => d.status === 'warning' || d.status === 'EXPIRING_SOON').length;
-    const critical = enrichedDocuments.filter(d => d.status === 'critical' || d.isExpiring).length;
-    const expired = enrichedDocuments.filter(d => d.status === 'expired' || d.isExpired).length;
+    const total = allDocuments.length;
+    const valid = allDocuments.filter(d => d.status === 'valid').length;
+    const warning = allDocuments.filter(d => d.status === 'warning').length;
+    const critical = allDocuments.filter(d => d.status === 'critical').length;
+    const expired = allDocuments.filter(d => d.status === 'expired').length;
     
     return { total, valid, warning, critical, expired };
-  }, [enrichedDocuments]);
+  }, [allDocuments]);
 
   const handleDocumentClick = (document) => {
     setSelectedDocument(document);
@@ -101,52 +86,8 @@ const DocumentsView = ({ data, stats, selectedTeam, setCurrentView, toast }) => 
     setShowUploadModal(true);
   };
 
-  const handleDeleteDocument = async (documentId) => {
-    if (!confirm('Sei sicuro di voler eliminare questo documento?')) return;
-    
-    // Il sistema gestisce automaticamente errori e toast
-    await documentsCrud.remove(documentId);
-  };
-
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleExportReport = () => {
-    // Prepara i dati per l'export
-    const exportData = {
-      documents: filteredDocuments,
-      stats: documentStats,
-      filters: filters,
-      exportDate: new Date().toISOString()
-    };
-    
-    // Converti in CSV o altro formato
-    const csv = convertToCSV(filteredDocuments);
-    downloadCSV(csv, 'documenti-report.csv');
-  };
-
-  const convertToCSV = (data) => {
-    const headers = ['Atleta', 'Squadra', 'Tipo', 'Stato', 'Data Scadenza', 'Giorni alla Scadenza'];
-    const rows = data.map(doc => [
-      doc.athleteName,
-      doc.teamName,
-      doc.typeFormatted || doc.type,
-      doc.status,
-      doc.expiryDate?.formatted || '-',
-      doc.daysUntilExpiry || '-'
-    ]);
-    
-    return [headers, ...rows].map(row => row.join(',')).join('\n');
-  };
-
-  const downloadCSV = (csv, filename) => {
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
   };
 
   const tabs = [
@@ -176,10 +117,7 @@ const DocumentsView = ({ data, stats, selectedTeam, setCurrentView, toast }) => 
               <Upload className="h-4 w-4" />
               Upload Documento
             </button>
-            <button 
-              onClick={handleExportReport}
-              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2"
-            >
+            <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2">
               <Download className="h-4 w-4" />
               Export Report
             </button>
@@ -275,11 +213,10 @@ const DocumentsView = ({ data, stats, selectedTeam, setCurrentView, toast }) => 
             className="px-3 py-1 border border-gray-300 rounded text-sm"
           >
             <option value="all">Tutti i tipi</option>
-            <option value="MEDICAL_CERTIFICATE">Certificati Medici</option>
-            <option value="INSURANCE">Assicurativi</option>
-            <option value="IDENTITY_CARD">Documenti Identità</option>
-            <option value="PRIVACY_CONSENT">Privacy</option>
-            <option value="OTHER">Altri</option>
+            <option value="medical">Medici</option>
+            <option value="insurance">Assicurativi</option>
+            <option value="figc">FIGC</option>
+            <option value="other">Altri</option>
           </select>
           
           <select 
@@ -328,47 +265,34 @@ const DocumentsView = ({ data, stats, selectedTeam, setCurrentView, toast }) => 
         </div>
       </div>
 
-      {/* Loading state */}
-      {documentsCrud.loading && (
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-gray-600">Caricamento documenti...</p>
-        </div>
-      )}
-
       {/* Content based on active tab */}
-      {!documentsCrud.loading && (
-        <div className="min-h-96">
-          {activeTab === 'dashboard' && (
-            <DocumentsDashboard 
-              documents={filteredDocuments}
-              stats={documentStats}
-              onDocumentClick={handleDocumentClick}
-              onUploadClick={handleUploadDocument}
-              onDeleteClick={handleDeleteDocument}
-              teams={data?.teams || []}
-            />
-          )}
-          
-          {activeTab === 'list' && (
-            <DocumentsList 
-              documents={filteredDocuments}
-              onDocumentClick={handleDocumentClick}
-              onUploadClick={handleUploadDocument}
-              onDeleteClick={handleDeleteDocument}
-            />
-          )}
-          
-          {activeTab === 'expiry' && (
-            <ExpiryCenter 
-              documents={filteredDocuments.filter(d => d.status !== 'valid' && d.status !== 'VALID')}
-              onDocumentClick={handleDocumentClick}
-              onUploadClick={handleUploadDocument}
-              onDeleteClick={handleDeleteDocument}
-            />
-          )}
-        </div>
-      )}
+      <div className="min-h-96">
+        {activeTab === 'dashboard' && (
+          <DocumentsDashboard 
+            documents={filteredDocuments}
+            stats={documentStats}
+            onDocumentClick={handleDocumentClick}
+            onUploadClick={handleUploadDocument}
+            teams={data?.teams || []}
+          />
+        )}
+        
+        {activeTab === 'list' && (
+          <DocumentsList 
+            documents={filteredDocuments}
+            onDocumentClick={handleDocumentClick}
+            onUploadClick={handleUploadDocument}
+          />
+        )}
+        
+        {activeTab === 'expiry' && (
+          <ExpiryCenter 
+            documents={filteredDocuments.filter(d => d.status !== 'valid')}
+            onDocumentClick={handleDocumentClick}
+            onUploadClick={handleUploadDocument}
+          />
+        )}
+      </div>
 
       {/* Modal Upload/Modifica Documento */}
       {(showDocumentModal || showUploadModal) && (
@@ -380,20 +304,14 @@ const DocumentsView = ({ data, stats, selectedTeam, setCurrentView, toast }) => 
             setShowUploadModal(false);
             setSelectedDocument(null);
           }}
-          onSave={async (documentData) => {
-            // Il nuovo sistema gestisce automaticamente il salvataggio
-            if (selectedDocument) {
-              await documentsCrud.update(selectedDocument.id, documentData);
-            } else {
-              await documentsCrud.create(documentData);
-            }
-            
+          onSave={(documentData) => {
+            console.log('Document saved:', documentData);
+            // TODO: Implementare salvataggio effettivo
             setShowDocumentModal(false);
             setShowUploadModal(false);
             setSelectedDocument(null);
           }}
           athletes={data?.athletes || []}
-          toast={toast}
         />
       )}
     </div>
