@@ -1,23 +1,11 @@
-// components/athletes/AthletesView.enhanced.jsx
+// components/athletes/AthletesView.jsx
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, Users, AlertTriangle, Calendar, Phone, Mail, MapPin } from 'lucide-react';
 import StatusBadge from '../common/StatusBadge';
 import AthleteModal from './AthleteModal';
 import ExportButton from '../export/ExportButton';
-import { useAthletes } from '../../hooks/useCrud';
 
-const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, toast, refreshData }) => {
-  // Usa il nuovo hook CRUD per atleti
-  const athletesCrud = useAthletes({ 
-    toast,
-    onSuccess: async (operation, athleteData) => {
-      // Aggiorna i dati dopo operazioni CRUD
-      if (refreshData) {
-        await refreshData();
-      }
-    }
-  });
-
+const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, toast, addAthlete, updateAthlete, deleteAthlete, refreshData }) => {
   const [selectedAthlete, setSelectedAthlete] = useState(null);
   const [showAthleteModal, setShowAthleteModal] = useState(false);
   const [filters, setFilters] = useState({
@@ -35,21 +23,23 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
       const matchesSearch = !searchTerm || 
         (athlete.firstName && athlete.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (athlete.lastName && athlete.lastName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (athlete.fullName && athlete.fullName.toLowerCase().includes(searchTerm.toLowerCase())) || // Usa fullName calcolato
+        (athlete.name && athlete.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (athlete.teamName && athlete.teamName.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesTeam = !filters.team || athlete.teamId === parseInt(filters.team);
       const matchesPosition = !filters.position || athlete.position === filters.position;
       
-      // Usa la proprietà isAgeValid trasformata
       const matchesAgeStatus = !filters.ageStatus || 
         (filters.ageStatus === 'valid' && athlete.isAgeValid) ||
         (filters.ageStatus === 'invalid' && !athlete.isAgeValid);
       
-      // Usa le proprietà trasformate per documenti
+      const today = new Date();
+      const hasExpiringDocs = new Date(athlete.medicalExpiry) - today < 30 * 24 * 60 * 60 * 1000 ||
+                             new Date(athlete.insuranceExpiry) - today < 30 * 24 * 60 * 60 * 1000;
+      
       const matchesDocStatus = !filters.documentStatus ||
-        (filters.documentStatus === 'expiring' && (athlete.isMedicalExpiring || athlete.isInsuranceExpiring)) ||
-        (filters.documentStatus === 'valid' && !athlete.isMedicalExpiring && !athlete.isInsuranceExpiring);
+        (filters.documentStatus === 'expiring' && hasExpiringDocs) ||
+        (filters.documentStatus === 'valid' && !hasExpiringDocs);
       
       const matchesPaymentStatus = !filters.paymentStatus || athlete.feeStatus === filters.paymentStatus;
       
@@ -57,39 +47,24 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
     });
   }, [data.athletes, searchTerm, filters]);
 
-  const uniquePositions = [...new Set(data.athletes.map(a => a.position).filter(Boolean))];
+  const uniquePositions = [...new Set(data.athletes.map(a => a.position))];
 
   const handleAthleteClick = (athlete) => {
     setSelectedAthlete(athlete);
     setShowAthleteModal(true);
   };
 
-  const handleDeleteAthlete = async (athlete) => {
-    if (!confirm(`Sei sicuro di voler eliminare l'atleta ${athlete.fullName}?`)) {
-      return;
-    }
-
-    // Il nuovo sistema gestisce automaticamente gli errori e mostra i toast
-    await athletesCrud.remove(athlete.id);
-  };
-
   const getDocumentStatus = (athlete) => {
-    // Usa le proprietà trasformate
-    if (athlete.isMedicalExpiring || athlete.isInsuranceExpiring) {
-      return 'warning';
-    }
-    if (athlete.isMedicalExpired || athlete.isInsuranceExpired) {
-      return 'critical';
-    }
+    const today = new Date();
+    const medicalExpiring = new Date(athlete.medicalExpiry) - today < 30 * 24 * 60 * 60 * 1000;
+    const insuranceExpiring = new Date(athlete.insuranceExpiry) - today < 30 * 24 * 60 * 60 * 1000;
+    
+    if (medicalExpiring || insuranceExpiring) return 'warning';
     return 'valid';
   };
 
-  const formatDate = (dateObj) => {
-    // I dati trasformati hanno già il formato .formatted
-    if (dateObj && dateObj.formatted) {
-      return dateObj.formatted;
-    }
-    return dateObj ? new Date(dateObj).toLocaleDateString('it-IT') : '-';
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('it-IT');
   };
 
   return (
@@ -232,7 +207,7 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
             <div>
               <p className="text-sm text-gray-600">Doc. in Scadenza</p>
               <p className="text-2xl font-bold text-red-600">
-                {filteredAthletes.filter(a => a.isMedicalExpiring || a.isInsuranceExpiring).length}
+                {filteredAthletes.filter(a => getDocumentStatus(a) === 'warning').length}
               </p>
             </div>
             <Calendar className="h-8 w-8 text-red-500" />
@@ -252,16 +227,8 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
         </div>
       </div>
 
-      {/* Loading state */}
-      {athletesCrud.loading && (
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-gray-600">Caricamento...</p>
-        </div>
-      )}
-
       {/* Lista Atlete */}
-      {!athletesCrud.loading && viewMode === 'table' ? (
+      {viewMode === 'table' ? (
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -298,30 +265,31 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
-                            {(athlete.firstName || '?').charAt(0).toUpperCase()}
+                            {(athlete.firstName || athlete.name || '?').charAt(0).toUpperCase()}
                           </div>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {athlete.fullName || 'Nome non disponibile'}
+                            {athlete.firstName && athlete.lastName 
+                              ? `${athlete.firstName} ${athlete.lastName}`
+                              : athlete.name || 'Nome non disponibile'
+                            }
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {athlete.position || '-'} • #{athlete.number || '-'}
-                          </div>
+                          <div className="text-sm text-gray-500">{athlete.position} • #{athlete.number}</div>
                         </div>
                       </div>
                     </td>
                     
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{athlete.teamName || '-'}</div>
+                      <div className="text-sm text-gray-900">{athlete.teamName}</div>
                       <div className="text-sm text-gray-500">
-                        {data.teams.find(t => t.id === athlete.teamId)?.category || '-'}
+                        {data.teams.find(t => t.id === athlete.teamId)?.category}
                       </div>
                     </td>
                     
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{athlete.age || '-'} anni</span>
+                        <span className="text-sm font-medium">{athlete.age} anni</span>
                         <StatusBadge status={athlete.isAgeValid ? 'valid' : 'critical'}>
                           {athlete.isAgeValid ? 'Conforme' : 'Non conforme'}
                         </StatusBadge>
@@ -337,12 +305,11 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <StatusBadge status={getDocumentStatus(athlete)}>
-                            {getDocumentStatus(athlete) === 'warning' ? 'In scadenza' : 
-                             getDocumentStatus(athlete) === 'critical' ? 'Scaduti' : 'Validi'}
+                            {getDocumentStatus(athlete) === 'warning' ? 'In scadenza' : 'Validi'}
                           </StatusBadge>
                         </div>
                         <div className="text-xs text-gray-500">
-                          Med: {formatDate(athlete.medicalCertificateExpiry)}
+                          Med: {formatDate(athlete.medicalExpiry)}
                         </div>
                         <div className="text-xs text-gray-500">
                           Ass: {formatDate(athlete.insuranceExpiry)}
@@ -355,24 +322,20 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
                         {athlete.feeStatus === 'paid' ? 'Pagato' : 'Pendente'}
                       </StatusBadge>
                       <div className="text-xs text-gray-500 mt-1">
-                        €{athlete.membershipFee || '0'}
+                        €{athlete.membershipFee}
                       </div>
                     </td>
                     
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="space-y-1">
-                        {athlete.phone && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            <span className="text-xs">{athlete.phone}</span>
-                          </div>
-                        )}
-                        {athlete.email && (
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            <span className="text-xs truncate max-w-24">{athlete.email}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          <span className="text-xs">{athlete.phone}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          <span className="text-xs truncate max-w-24">{athlete.email}</span>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -391,7 +354,7 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
             </div>
           )}
         </div>
-      ) : !athletesCrud.loading && (
+      ) : (
         /* Vista a schede */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredAthletes.map(athlete => (
@@ -402,28 +365,29 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-lg">
-                  {(athlete.firstName || '?').charAt(0).toUpperCase()}
+                  {(athlete.firstName || athlete.name || '?').charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold truncate">
-                    {athlete.fullName || 'Nome non disponibile'}
+                    {athlete.firstName && athlete.lastName 
+                      ? `${athlete.firstName} ${athlete.lastName}`
+                      : athlete.name || 'Nome non disponibile'
+                    }
                   </h3>
-                  <p className="text-sm text-gray-600">
-                    {athlete.position || '-'} • #{athlete.number || '-'}
-                  </p>
+                  <p className="text-sm text-gray-600">{athlete.position} • #{athlete.number}</p>
                 </div>
               </div>
               
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Squadra:</span>
-                  <span className="text-sm font-medium">{athlete.teamName || '-'}</span>
+                  <span className="text-sm font-medium">{athlete.teamName}</span>
                 </div>
                 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Età:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{athlete.age || '-'} anni</span>
+                    <span className="text-sm font-medium">{athlete.age} anni</span>
                     <StatusBadge status={athlete.isAgeValid ? 'valid' : 'critical'} size="sm">
                       {athlete.isAgeValid ? '✓' : '⚠'}
                     </StatusBadge>
@@ -433,8 +397,7 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Documenti:</span>
                   <StatusBadge status={getDocumentStatus(athlete)} size="sm">
-                    {getDocumentStatus(athlete) === 'warning' ? 'Scadenza' : 
-                     getDocumentStatus(athlete) === 'critical' ? 'Scaduti' : 'OK'}
+                    {getDocumentStatus(athlete) === 'warning' ? 'Scadenza' : 'OK'}
                   </StatusBadge>
                 </div>
                 
@@ -446,11 +409,11 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
                 </div>
               </div>
               
-              {athlete.usesBus && athlete.assignedBus && (
+              {athlete.usesBus && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
                   <div className="flex items-center gap-1 text-xs text-gray-600">
                     <MapPin className="h-3 w-3" />
-                    <span>{athlete.assignedBus.name}</span>
+                    <span>{athlete.assignedBus?.name}</span>
                   </div>
                 </div>
               )}
@@ -480,14 +443,28 @@ const AthletesView = ({ data, stats, selectedTeam, searchTerm, setSearchTerm, to
             setSelectedAthlete(null);
           }}
           onSave={async (athleteData) => {
-            // Il salvataggio è gestito dal modal stesso con il nuovo sistema
-            // Qui dobbiamo solo chiudere il modal e aggiornare i dati
-            setShowAthleteModal(false);
-            setSelectedAthlete(null);
-            
-            // Aggiorna i dati
-            if (refreshData) {
-              await refreshData();
+            try {
+              if (selectedAthlete) {
+                // Modifica atleta esistente
+                await updateAthlete(selectedAthlete.id, athleteData);
+                toast.showSuccess('Atleta aggiornata con successo!');
+              } else {
+                // Nuova atleta
+                await addAthlete(athleteData);
+                toast.showSuccess('Atleta aggiunta con successo!');
+              }
+              
+              // Chiudi il modal
+              setShowAthleteModal(false);
+              setSelectedAthlete(null);
+              
+              // Aggiorna i dati
+              if (refreshData) {
+                await refreshData();
+              }
+            } catch (error) {
+              console.error('Error saving athlete:', error);
+              toast.showError(error.message || 'Errore nel salvataggio');
             }
           }}
         />
