@@ -14,7 +14,7 @@ class ApiClient {
   }
 
   // Helper function per pulire i dati prima di inviarli al backend
-  cleanDataForBackend(data) {
+  cleanDataForBackend(data, entityType = 'general') {
     const cleaned = { ...data };
     
     // Rimuovi campi vuoti o null
@@ -25,44 +25,72 @@ class ApiClient {
     });
     
     // Pulisci formato telefono (rimuovi tutto tranne numeri e +)
-    if (cleaned.phone) {
-      cleaned.phone = cleaned.phone.replace(/[^+\d]/g, '');
-    }
+    const phoneFields = ['phone', 'presidentPhone', 'secretaryPhone'];
+    phoneFields.forEach(field => {
+      if (cleaned[field]) {
+        cleaned[field] = cleaned[field].replace(/[^+\d]/g, '');
+      }
+    });
     
     // Pulisci formato CAP (solo numeri)
     if (cleaned.postalCode) {
       cleaned.postalCode = cleaned.postalCode.replace(/\D/g, '');
     }
     
-    // Converti age in birthDate se presente
-    if (cleaned.age !== undefined && !cleaned.birthDate) {
-      const birthYear = new Date().getFullYear() - cleaned.age;
-      cleaned.birthDate = `${birthYear}-01-01T00:00:00.000Z`;
-      delete cleaned.age;
+    // Pulisci formato codice fiscale (uppercase)
+    if (cleaned.fiscalCode) {
+      cleaned.fiscalCode = cleaned.fiscalCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
     }
     
-    // Se birthDate è presente ma non in formato datetime, convertilo
-    if (cleaned.birthDate && !cleaned.birthDate.includes('T')) {
-      cleaned.birthDate = `${cleaned.birthDate}T00:00:00.000Z`;
+    // Pulisci formato partita IVA (solo numeri)
+    if (cleaned.vatNumber) {
+      cleaned.vatNumber = cleaned.vatNumber.replace(/\D/g, '');
     }
     
-    // Converti campi legacy
-    if (cleaned.number !== undefined) {
-      cleaned.jerseyNumber = cleaned.number;
-      delete cleaned.number;
+    // Pulisci formato IBAN (uppercase, no spazi)
+    if (cleaned.iban) {
+      cleaned.iban = cleaned.iban.toUpperCase().replace(/\s/g, '');
     }
     
-    if (cleaned.usesBus !== undefined) {
-      cleaned.usesTransport = cleaned.usesBus;
-      delete cleaned.usesBus;
+    // Converti tutte le date in formato ISO 8601
+    const dateFields = ['birthDate', 'issueDate', 'expiryDate', 'dueDate', 'paidDate', 
+                       'date', 'trialEndsAt', 'lastLogin', 'lockedUntil'];
+    dateFields.forEach(field => {
+      if (cleaned[field] && !cleaned[field].includes('T')) {
+        cleaned[field] = `${cleaned[field]}T00:00:00.000Z`;
+      }
+    });
+    
+    // Logica specifica per atleti
+    if (entityType === 'athlete') {
+      // Converti age in birthDate se presente
+      if (cleaned.age !== undefined && !cleaned.birthDate) {
+        const birthYear = new Date().getFullYear() - cleaned.age;
+        cleaned.birthDate = `${birthYear}-01-01T00:00:00.000Z`;
+        delete cleaned.age;
+      }
+      
+      // Converti campi legacy
+      if (cleaned.number !== undefined) {
+        cleaned.jerseyNumber = cleaned.number;
+        delete cleaned.number;
+      }
+      
+      if (cleaned.usesBus !== undefined) {
+        cleaned.usesTransport = cleaned.usesBus;
+        delete cleaned.usesBus;
+      }
+      
+      // Rimuovi campi atleta non accettati
+      const athleteFieldsToRemove = ['name', 'assignedBus', 'zone', 'membershipFee', 
+                                    'feeStatus', 'medicalExpiry', 'insuranceExpiry', 'busFee', 
+                                    'busFeeStatus', 'gamesPlayed', 'goals', 'yellowCards', 
+                                    'redCards', 'position'];
+      athleteFieldsToRemove.forEach(field => delete cleaned[field]);
     }
     
-    // Rimuovi campi che non dovrebbero essere inviati
-    const fieldsToRemove = ['id', 'name', 'assignedBus', 'zone', 'membershipFee', 
-                           'feeStatus', 'medicalExpiry', 'insuranceExpiry', 'busFee', 
-                           'busFeeStatus', 'gamesPlayed', 'goals', 'yellowCards', 
-                           'redCards', 'position'];
-    fieldsToRemove.forEach(field => delete cleaned[field]);
+    // Rimuovi sempre l'id dal body (va nell'URL)
+    delete cleaned.id;
     
     return cleaned;
   }
@@ -191,6 +219,29 @@ class ApiClient {
     
     return data;
   }
+  
+  async register(data) {
+    const cleanData = this.cleanDataForBackend(data, 'user');
+    return this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(cleanData)
+    });
+  }
+  
+  async updateProfile(data) {
+    const cleanData = this.cleanDataForBackend(data, 'user');
+    return this.request('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(cleanData)
+    });
+  }
+  
+  async changePassword(currentPassword, newPassword) {
+    return this.request('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+  }
 
   async logout() {
     try {
@@ -215,17 +266,10 @@ class ApiClient {
   }
 
   async createAthlete(data) {
-    return this.request('/athletes', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  }
-
-  async createAthlete(data) {
     console.log('createAthlete called with:', data);
     
-    // Usa la funzione helper per pulire i dati
-    const cleanData = this.cleanDataForBackend(data);
+    // Usa la funzione helper per pulire i dati specificando il tipo
+    const cleanData = this.cleanDataForBackend(data, 'athlete');
     
     console.log('Clean data to send:', cleanData);
     
@@ -238,8 +282,8 @@ class ApiClient {
   async updateAthlete(id, data) {
     console.log('updateAthlete called with:', { id, data });
     
-    // Usa la funzione helper per pulire i dati
-    const cleanData = this.cleanDataForBackend(data);
+    // Usa la funzione helper per pulire i dati specificando il tipo
+    const cleanData = this.cleanDataForBackend(data, 'athlete');
     
     console.log('Clean data to send:', cleanData);
     console.log('Clean data JSON:', JSON.stringify(cleanData, null, 2));
@@ -287,16 +331,18 @@ class ApiClient {
   }
 
   async createDocument(data) {
+    const cleanData = this.cleanDataForBackend(data, 'document');
     return this.request('/documents', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     });
   }
 
   async updateDocument(id, data) {
+    const cleanData = this.cleanDataForBackend(data, 'document');
     return this.request(`/documents/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     });
   }
 
@@ -312,16 +358,18 @@ class ApiClient {
   }
 
   async createPayment(data) {
+    const cleanData = this.cleanDataForBackend(data, 'payment');
     return this.request('/payments', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     });
   }
 
   async updatePayment(id, data) {
+    const cleanData = this.cleanDataForBackend(data, 'payment');
     return this.request(`/payments/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     });
   }
 
@@ -337,16 +385,18 @@ class ApiClient {
   }
 
   async createMatch(data) {
+    const cleanData = this.cleanDataForBackend(data, 'match');
     return this.request('/matches', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     });
   }
 
   async updateMatch(id, data) {
+    const cleanData = this.cleanDataForBackend(data, 'match');
     return this.request(`/matches/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     });
   }
 
@@ -389,6 +439,22 @@ class ApiClient {
   async getOrganizations() {
     return this.request('/organizations');
   }
+  
+  async createOrganization(data) {
+    const cleanData = this.cleanDataForBackend(data, 'organization');
+    return this.request('/organizations', {
+      method: 'POST',
+      body: JSON.stringify(cleanData)
+    });
+  }
+  
+  async updateOrganization(id, data) {
+    const cleanData = this.cleanDataForBackend(data, 'organization');
+    return this.request(`/organizations/${id}`, {
+      method: 'PUT', 
+      body: JSON.stringify(cleanData)
+    });
+  }
 
   async switchOrganization(organizationId) {
     return this.request('/auth/switch-organization', {
@@ -406,10 +472,21 @@ class ApiClient {
   }
   
   async patch(path, data, options = {}) {
+    // Determina il tipo di entità dal path
+    let entityType = 'general';
+    if (path.includes('/athletes')) entityType = 'athlete';
+    else if (path.includes('/organizations')) entityType = 'organization';
+    else if (path.includes('/staff')) entityType = 'staff';
+    else if (path.includes('/documents')) entityType = 'document';
+    else if (path.includes('/payments')) entityType = 'payment';
+    else if (path.includes('/matches')) entityType = 'match';
+    
+    const cleanData = this.cleanDataForBackend(data, entityType);
+    
     return this.request(path, {
       ...options,
       method: 'PATCH',
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     });
   }
   
@@ -419,6 +496,33 @@ class ApiClient {
       method: 'POST',
       body: data instanceof FormData ? data : JSON.stringify(data),
       ...(data instanceof FormData ? {} : { headers: { 'Content-Type': 'application/json' } })
+    });
+  }
+
+  // Staff
+  async getStaffMembers() {
+    return this.request('/staff');
+  }
+  
+  async createStaffMember(data) {
+    const cleanData = this.cleanDataForBackend(data, 'staff');
+    return this.request('/staff', {
+      method: 'POST',
+      body: JSON.stringify(cleanData)
+    });
+  }
+  
+  async updateStaffMember(id, data) {
+    const cleanData = this.cleanDataForBackend(data, 'staff');
+    return this.request(`/staff/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(cleanData)
+    });
+  }
+  
+  async deleteStaffMember(id) {
+    return this.request(`/staff/${id}`, {
+      method: 'DELETE'
     });
   }
 
