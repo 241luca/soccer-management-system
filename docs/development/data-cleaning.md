@@ -56,21 +56,52 @@ Occorre applicare la stessa logica di pulizia a:
 - Creazione/update di organizzazioni (hanno `phone`, `postalCode`, etc.)
 - Altri modelli che hanno campi simili
 
-## Esempio di Utilizzo
+## Funzione Helper Migliorata
+
+La funzione `cleanDataForBackend(data, entityType)` ora accetta un parametro `entityType` per gestire pulizie specifiche:
 
 ```javascript
-// Prima (errore 400)
-api.updateAthlete(id, {
-  phone: "335-123 4567",  // Formato non valido
-  birthDate: "2010-01-01" // Manca orario
-});
+cleanDataForBackend(data, entityType = 'general') {
+  // Pulizia generale per tutti i tipi
+  // ...
+  
+  // Pulizia specifica per tipo di entità
+  if (entityType === 'athlete') {
+    // Logica specifica per atleti
+  }
+  // Altri tipi: 'organization', 'staff', 'document', 'payment', 'match', 'user'
+}
+```
 
-// Dopo (funziona)
-api.updateAthlete(id, {
-  phone: "335-123 4567",  // Verrà pulito automaticamente
-  birthDate: "2010-01-01" // Verrà convertito in ISO 8601
-});
-// Invia: { phone: "3351234567", birthDate: "2010-01-01T00:00:00.000Z" }
+### Tipi di Entità Supportati:
+
+- `'general'` - Pulizia di base (default)
+- `'athlete'` - Include conversioni legacy (age→birthDate, etc.)
+- `'organization'` - Pulisce campi societari
+- `'staff'` - Per membri dello staff
+- `'document'` - Gestisce date scadenza
+- `'payment'` - Date pagamenti
+- `'match'` - Date e orari partite
+- `'user'` - Dati utente
+
+### Metodi API Aggiornati:
+
+Tutti i metodi che inviano dati al backend ora usano la funzione helper:
+
+```javascript
+// Atleti
+api.createAthlete(data)     // usa entityType: 'athlete'
+api.updateAthlete(id, data) // usa entityType: 'athlete'
+
+// Organizzazioni
+api.createOrganization(data)     // usa entityType: 'organization'
+api.updateOrganization(id, data) // usa entityType: 'organization'
+
+// Staff
+api.createStaffMember(data)     // usa entityType: 'staff'
+api.updateStaffMember(id, data) // usa entityType: 'staff'
+
+// E così via per tutti gli altri metodi...
 ```
 
 ## Note per gli Sviluppatori

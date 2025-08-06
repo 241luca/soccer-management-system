@@ -11,104 +11,121 @@
   - Codice Fiscale: formato specifico italiano
 
 ### 2. Creazione Funzione Helper
-- [x] Creata `cleanDataForBackend()` in `api.js` che gestisce:
+- [x] Creata `cleanDataForBackend(data, entityType)` in `api.js` che gestisce:
   - Pulizia telefoni (rimuove trattini, spazi, parentesi)
   - Pulizia CAP (solo numeri)
   - Conversione date in ISO 8601
   - Conversioni legacy (age→birthDate, number→jerseyNumber, usesBus→usesTransport)
   - Rimozione campi non accettati dal backend
+  - Gestione campi specifici per tipo di entità
 
-### 3. Implementazione per Atleti
+### 3. Implementazione per Atleti ✅
 - [x] Aggiunto metodo `createAthlete()` con data cleaning
 - [x] Aggiornato `updateAthlete()` per usare helper
 - [x] Testato e verificato funzionamento
 
-### 4. Documentazione
+### 4. Implementazione per Autenticazione e Utenti ✅
+- [x] `register()` - Registrazione nuovi utenti
+- [x] `updateProfile()` - Update profilo utente
+- [x] `changePassword()` - Cambio password
+- [x] Pulizia automatica campo `phone`
+
+### 5. Implementazione per Organizzazioni ✅
+- [x] `createOrganization()` - Creazione nuova società
+- [x] `updateOrganization()` - Update dati società
+- [x] Pulizia: `phone`, `postalCode`, `fiscalCode`, `vatNumber`, `presidentPhone`, `secretaryPhone`, `iban`
+
+### 6. Implementazione per Staff ✅
+- [x] `createStaffMember()` - Aggiungi membro staff
+- [x] `updateStaffMember()` - Modifica membro staff
+- [x] `deleteStaffMember()` - Elimina membro staff
+
+### 7. Implementazione per Documenti ✅
+- [x] `createDocument()` - Nuovo documento
+- [x] `updateDocument()` - Modifica documento
+- [x] Gestione date scadenza in formato ISO 8601
+
+### 8. Implementazione per Pagamenti ✅
+- [x] `createPayment()` - Nuovo pagamento
+- [x] `updatePayment()` - Modifica pagamento
+- [x] Conversione date pagamento
+
+### 9. Implementazione per Partite ✅
+- [x] `createMatch()` - Nuova partita
+- [x] `updateMatch()` - Modifica partita
+- [x] Gestione date/orari partite
+
+### 10. Metodi Generici ✅
+- [x] `patch()` - Determina automaticamente il tipo di entità dal path
+
+### 11. Documentazione ✅
 - [x] Creato `docs/development/data-cleaning.md`
 - [x] Documentate regex di validazione backend
 - [x] Esempi di utilizzo
+- [x] Aggiornata scaletta lavori
+
+## 🎯 FUNZIONALITÀ HELPER `cleanDataForBackend()`
+
+### Pulizia Generale (tutti i tipi):
+- ✅ Rimozione campi vuoti/null
+- ✅ Pulizia telefoni (phone, presidentPhone, secretaryPhone)
+- ✅ Pulizia CAP (solo numeri, 5 cifre)
+- ✅ Pulizia codice fiscale (uppercase, solo alfanumerici)
+- ✅ Pulizia partita IVA (solo numeri)
+- ✅ Pulizia IBAN (uppercase, no spazi)
+- ✅ Conversione date in ISO 8601
+- ✅ Rimozione campo `id` dal body
+
+### Pulizia Specifica per Atleti:
+- ✅ Conversione age → birthDate
+- ✅ Conversione number → jerseyNumber
+- ✅ Conversione usesBus → usesTransport
+- ✅ Rimozione campi legacy
 
 ## 🚧 LAVORI DA FARE
 
-### 1. Autenticazione e Utenti
-- [ ] `register()` - Registrazione nuovi utenti
-- [ ] `updateUser()` - Update profilo utente
-- [ ] `createUser()` - Creazione utenti da admin
-- [ ] Campi da pulire: `phone`, `firstName`, `lastName`
+### 1. Testing Completo
+- [ ] Test manuale di ogni funzionalità modificata
+- [ ] Verificare che non ci siano regressioni
+- [ ] Test con formati di input "sporchi"
 
-### 2. Organizzazioni
-- [ ] `updateOrganization()` - Update dati società
-- [ ] `createOrganization()` - Creazione nuova società (multi-tenant)
-- [ ] Campi da pulire: `phone`, `postalCode`, `fiscalCode`, `vatNumber`, `presidentPhone`, `secretaryPhone`
-
-### 3. Staff
-- [ ] `createStaffMember()` - Aggiungi membro staff
-- [ ] `updateStaffMember()` - Modifica membro staff
-- [ ] Campi da pulire: `phone`, `fiscalCode`
-
-### 4. Genitori (Parents)
-- [ ] Verificare se esistono endpoint per genitori
-- [ ] Campi probabili: `phone`, `fiscalCode`, `address`
-
-### 5. Documenti
-- [ ] Verificare validazioni per upload documenti
-- [ ] Gestione date scadenza in formato ISO 8601
-
-### 6. Pagamenti
-- [ ] `createPayment()` - Nuovo pagamento
-- [ ] `updatePayment()` - Modifica pagamento
-- [ ] Verificare formato date pagamento
-
-### 7. Partite
-- [ ] `createMatch()` - Nuova partita
-- [ ] `updateMatch()` - Modifica partita
-- [ ] Gestione date/orari partite
-
-### 8. Trasporti
-- [ ] `createBus()` - Nuovo autobus
-- [ ] `updateBus()` - Modifica autobus
+### 2. Trasporti
 - [ ] `assignTransport()` - Assegnazione trasporto atleta
+- [ ] Verificare altri metodi trasporti
 
-## 📊 PRIORITÀ
+### 3. Genitori (se implementato)
+- [ ] Verificare se esistono endpoint per genitori
+- [ ] Implementare pulizia se necessario
 
-### 🔴 Alta Priorità (Da fare subito)
-1. **Utenti/Auth** - Impatta login e registrazione
-2. **Organizzazioni** - Dati societari fondamentali
+### 4. Miglioramenti Futuri
+- [ ] Aggiungere validazione lato client prima dell'invio
+- [ ] Messaggi di errore più specifici
+- [ ] Unit test per la funzione helper
 
-### 🟡 Media Priorità
-3. **Staff** - Gestione personale
-4. **Documenti** - Scadenze importanti
-5. **Pagamenti** - Gestione quote
+## 📊 RIEPILOGO MODIFICHE
 
-### 🟢 Bassa Priorità
-6. **Partite** - Calendario
-7. **Trasporti** - Funzionalità accessoria
-8. **Genitori** - Se implementato
+### Metodi API Aggiornati:
+1. **Atleti**: createAthlete, updateAthlete
+2. **Auth**: register, updateProfile
+3. **Organizzazioni**: createOrganization, updateOrganization
+4. **Staff**: createStaffMember, updateStaffMember
+5. **Documenti**: createDocument, updateDocument
+6. **Pagamenti**: createPayment, updatePayment
+7. **Partite**: createMatch, updateMatch
+8. **Generico**: patch
 
-## 🛠️ PIANO DI LAVORO
+### Campi Puliti Automaticamente:
+- **Telefoni**: Rimozione di spazi, trattini, parentesi
+- **CAP**: Solo 5 cifre numeriche
+- **Codice Fiscale**: Uppercase, formato corretto
+- **Partita IVA**: Solo numeri
+- **IBAN**: Uppercase, no spazi
+- **Date**: Conversione in ISO 8601
 
-### Fase 1: Identificazione Endpoints
-1. Cercare tutti i metodi create/update in `api.js`
-2. Verificare quali hanno campi che necessitano pulizia
-3. Controllare schema Prisma per validazioni
+## ✅ RISULTATO FINALE
 
-### Fase 2: Implementazione
-1. Applicare `cleanDataForBackend()` a ogni metodo identificato
-2. Testare con dati reali
-3. Aggiornare documentazione
-
-### Fase 3: Testing
-1. Test manuale di ogni funzionalità
-2. Verificare che non ci siano regressioni
-3. Test con formati di input "sporchi"
-
-### Fase 4: Documentazione Finale
-1. Aggiornare data-cleaning.md con tutti i casi
-2. Aggiungere esempi per ogni modulo
-3. Note per futuri sviluppatori
-
-## 📝 NOTE
-
-- La funzione helper è già predisposta per gestire la maggior parte dei casi
-- Potrebbe essere necessario aggiungere logica specifica per alcuni campi
-- Verificare sempre le validazioni Zod nel backend prima di implementare
+Ora il sistema pulisce automaticamente tutti i dati prima di inviarli al backend, garantendo che:
+- I formati siano sempre corretti
+- Non ci siano errori di validazione
+- L'esperienza utente sia migliore (non devono inserire dati in formati specifici)
+- Il codice sia più manutenibile (logica centralizzata)
